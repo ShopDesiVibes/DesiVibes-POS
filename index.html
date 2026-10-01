@@ -462,9 +462,15 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
             <input class="inp" id="rcv-cat-custom" placeholder="e.g. Chaniya Choli" type="text">
           </div>
           <div class="fg"><label>SKU (Optional)</label><input class="inp" id="rcv-sku" type="text" placeholder="ANK-RED-L"></div>
+          <div class="hint" id="rcv-rate-hint" style="display:none;color:var(--bl);font-weight:600;margin-bottom:6px"></div>
+          <div class="fg">
+            <label>Item Cost in INR (₹) — auto converts to USD</label>
+            <input class="inp" id="rcv-inr" type="number" placeholder="e.g. ₹2100" oninput="calcInr()" style="font-size:18px">
+            <div class="hint">Type INR → USD fills automatically below</div>
+          </div>
           <div class="row2">
             <div class="fg">
-              <label>Item Cost (USD)</label>
+              <label>Item Cost (USD) — auto or type</label>
               <input class="inp" id="rcv-cost" type="number" step="0.01" placeholder="$24.85" oninput="calcRcv()">
             </div>
             <div class="fg">
@@ -622,7 +628,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzlCXt2JjK_tA29BSVvY1Mb
 // ─────────────────────────────────────────────────────────────────
 
 // ─── State ────────────────────────────────────────────────────────
-let cur='dashboard', invData=[], modalSaleId='', selPayMethod='', curItemId='', curItemCost=0;
+let cur='dashboard', invData=[], modalSaleId='', selPayMethod='', curItemId='', curItemCost=0, curRate=0;
 const TITLES={dashboard:'Dashboard',shipment:'Log Shipment',receive:'Receive Items',sale:'Log Sale',pending:'Pending Payments',inventory:'Inventory Age',reports:'Reports'};
 const SCREENS=['dashboard','shipment','receive','sale','pending','inventory','reports'];
 
@@ -748,6 +754,10 @@ async function onShpSelect(){
     $('rcv-ttl').textContent='➕ Add Item';
     if(!$('rcv-id').value)$('rcv-id').value=t.nextItemId;
     $('rcv-btn').textContent='➕ Add Item · '+(t.totalUnits-t.itemsTagged)+' left';
+    curRate=t.rate||0;
+    const rateHint=$('rcv-rate-hint');
+    if(curRate>0){rateHint.textContent='Rate: 1 USD = ₹'+curRate.toFixed(1)+' (from shipment)';rateHint.style.display='block';}
+    else{rateHint.style.display='none';}
     const cPct=t.totalProductUSD>0?Math.min(100,Math.round(t.costTotal/t.totalProductUSD*100)):0;
     const sPct=t.totalShippingUSD>0?Math.min(100,Math.round(t.shipTotal/t.totalShippingUSD*100)):0;
     const iPct=t.totalUnits>0?Math.min(100,Math.round(t.itemsTagged/t.totalUnits*100)):0;
@@ -761,6 +771,14 @@ async function onShpSelect(){
       '<div class="prog"><div class="pfill g" style="width:'+sPct+'%"></div></div>'+
       '<div style="margin-top:6px;font-size:12px;color:var(--md)">Next ID: <strong style="color:var(--o)">'+t.nextItemId+'</strong></div>';
   }catch(e){toast('Error loading shipment','err');}
+}
+function calcInr(){
+  const inr=parseFloat($('rcv-inr').value)||0;
+  if(inr>0&&curRate>0){
+    const usd=Math.round(inr/curRate*100)/100;
+    $('rcv-cost').value=usd.toFixed(2);
+    calcRcv();
+  }
 }
 function calcRcv(){
   const cost=parseFloat($('rcv-cost').value)||0,ship=parseFloat($('rcv-spu').value)||0;
@@ -780,7 +798,7 @@ async function submitRcv(){
   toast('Adding item...');
   try{
     const r=await post({action:'receiveItem',itemId:customId,shipmentId:$('rcv-shp').value,category:cat,sku:$('rcv-sku').value,costUSD:$('rcv-cost').value,shippingPerUnit:$('rcv-spu').value,retailPrice:$('rcv-retail').value});
-    if(r.ok){toast('✅ '+r.itemId+' added!','ok');$('rcv-id').value='';$('rcv-cost').value='';$('rcv-retail').value='';$('rcv-sku').value='';$('rcv-prv').style.display='none';onShpSelect();}
+    if(r.ok){toast('✅ '+r.itemId+' added!','ok');$('rcv-id').value='';$('rcv-inr').value='';$('rcv-cost').value='';$('rcv-retail').value='';$('rcv-sku').value='';$('rcv-prv').style.display='none';onShpSelect();}
     else toast('Error: '+r.error,'err');
   }catch(e){toast('Error adding item','err');}
 }
