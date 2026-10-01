@@ -618,6 +618,21 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
 </div>
 
 <!-- ITEM DETAIL MODAL -->
+<div id="login-overlay" style="position:fixed;inset:0;background:linear-gradient(160deg,#1a0a00 0%,#3d1a00 50%,#1a0a00 100%);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px">
+  <div style="width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:20px">
+    <div style="font-size:52px;line-height:1">🪻</div>
+    <div style="color:#fff;font-size:26px;font-weight:800;letter-spacing:-.02em;text-align:center">Desi Vibes</div>
+    <div style="color:rgba(255,255,255,.55);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-top:-12px">Store Management</div>
+    <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:18px;padding:28px 24px;width:100%;display:flex;flex-direction:column;gap:14px;backdrop-filter:blur(10px)">
+      <label style="color:rgba(255,255,255,.7);font-size:13px;font-weight:600;letter-spacing:.04em">PASSWORD</label>
+      <input id="login-pw" type="password" onkeydown="loginKeydown(event)" placeholder="Enter password" style="background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:12px;padding:14px 16px;color:#fff;font-size:16px;font-family:inherit;outline:none;width:100%;box-sizing:border-box;-webkit-text-fill-color:#fff">
+      <div id="login-err" style="display:none;color:#FCA5A5;font-size:13px;font-weight:600;text-align:center">❌ Incorrect password — try again</div>
+      <button id="login-btn" onclick="submitLogin()" style="background:var(--o);border:none;border-radius:12px;padding:15px;color:#fff;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;letter-spacing:.02em;transition:opacity .15s">Enter →</button>
+    </div>
+    <div style="color:rgba(255,255,255,.25);font-size:11px;text-align:center">Desi Vibes POS · Private Access Only</div>
+  </div>
+</div>
+
 <div id="shp-overlay" onclick="closeShpModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)">
   <div id="shp-modal" style="background:var(--wh);border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
     <div class="m-handle"></div>
@@ -1240,7 +1255,40 @@ function mkHealth(label,count,pct,color){
 }
 
 // ─── Init ─────────────────────────────────────────────────────────
-window.onload=()=>{loadDash();};
+// ─── Auth ──────────────────────────────────────────────────────────
+function isAuthed(){try{return sessionStorage.getItem('dv_auth')==='1';}catch(e){return false;}}
+async function submitLogin(){
+  const pw=$('login-pw').value;
+  if(!pw)return;
+  const btn=$('login-btn');
+  btn.disabled=true;btn.textContent='Checking...';
+  try{
+    const r=await post({action:'checkPassword',password:pw});
+    if(r.ok){
+      try{sessionStorage.setItem('dv_auth','1');}catch(e){}
+      $('login-overlay').style.display='none';
+      loadDash();
+    } else {
+      $('login-err').style.display='block';
+      $('login-pw').value='';$('login-pw').focus();
+      btn.disabled=false;btn.textContent='Enter';
+    }
+  }catch(e){
+    $('login-err').style.display='block';
+    btn.disabled=false;btn.textContent='Enter';
+  }
+}
+function loginKeydown(e){if(e.key==='Enter')submitLogin();}
+
+window.onload=()=>{
+  if(isAuthed()){
+    $('login-overlay').style.display='none';
+    loadDash();
+  } else {
+    $('login-overlay').style.display='flex';
+    setTimeout(()=>$('login-pw').focus(),100);
+  }
+};
 </script>
 </body>
 </html>
