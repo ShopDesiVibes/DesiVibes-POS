@@ -515,10 +515,7 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
           <div class="found">
             <div class="found-name" id="sf-name"></div>
             <div class="found-tag" id="sf-tag"></div>
-            <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px">
-              <div class="drow"><span class="dk2">Your Cost:</span><span class="dv" id="sf-cost"></span></div>
-              <div class="drow"><span class="dk2">Listed Retail:</span><span class="dv" id="sf-retail"></span></div>
-            </div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px" id="sf-breakdown"></div>
           </div>
         </div>
         <hr class="div">
@@ -543,7 +540,7 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
           <label>Specify Method</label>
           <input class="inp" id="sale-other" type="text" placeholder="e.g. Bank Transfer">
         </div>
-        <button class="btn g" onclick="submitSale()">✅ Complete Sale</button>
+        <button class="btn g" onclick="submitSale()" style="position:sticky;bottom:calc(var(--nav) + 8px);z-index:10;box-shadow:0 4px 20px rgba(22,163,74,.4)">✅ Complete Sale</button>
       </div>
     </div>
 
@@ -620,6 +617,39 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
   </div>
 </div>
 
+<!-- ITEM DETAIL MODAL -->
+<div id="item-overlay" onclick="closeItemModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)">
+  <div id="item-modal" style="background:var(--wh);border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
+    <div class="m-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="m-ttl" id="im-id" style="text-align:left;font-size:20px;color:var(--o)"></div>
+      <div id="im-status-badge" class="badge" style="font-size:12px"></div>
+    </div>
+    <div id="im-details"></div>
+    <hr class="div" style="margin:4px 0">
+    <div class="card-ttl">✏️ Edit Item</div>
+    <div class="fg">
+      <label>Retail Price ($)</label>
+      <input class="inp" id="im-retail" type="number" step="0.01" placeholder="0.00" oninput="calcImMargin()">
+      <div class="hint" id="im-margin-hint" style="color:var(--gn);font-weight:600"></div>
+    </div>
+    <div class="fg">
+      <label>Category</label>
+      <input class="inp" id="im-cat" type="text">
+    </div>
+    <div class="fg">
+      <label>SKU (Optional)</label>
+      <input class="inp" id="im-sku" type="text">
+    </div>
+    <div class="fg">
+      <label>Notes</label>
+      <input class="inp" id="im-notes" type="text" placeholder="Any notes...">
+    </div>
+    <button class="btn p" onclick="saveItemEdit()">💾 Save Changes</button>
+    <button class="btn gh sm" onclick="closeItemModal()">Close</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -628,7 +658,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzlCXt2JjK_tA29BSVvY1Mb
 // ─────────────────────────────────────────────────────────────────
 
 // ─── State ────────────────────────────────────────────────────────
-let cur='dashboard', invData=[], modalSaleId='', selPayMethod='', curItemId='', curItemCost=0, curRate=0;
+let cur='dashboard', invData=[], modalSaleId='', selPayMethod='', curItemId='', curItemCost=0, curRate=0, curItemData={};
 const TITLES={dashboard:'Dashboard',shipment:'Log Shipment',receive:'Receive Items',sale:'Log Sale',pending:'Pending Payments',inventory:'Inventory Age',reports:'Reports'};
 const SCREENS=['dashboard','shipment','receive','sale','pending','inventory','reports'];
 
@@ -813,6 +843,8 @@ async function loadSaleForm(){
       const o=document.createElement('option');o.value=i.itemId;
       o.textContent=i.itemId+' — '+i.category+' ('+fmt(i.retail)+')';
       o.dataset.cost=i.cost;o.dataset.retail=i.retail;o.dataset.cat=i.category;
+      o.dataset.productCost=i.productCost||0;o.dataset.shipping=i.shippingPerUnit||0;
+      o.dataset.dateReceived=i.dateReceived||'';
       sel.appendChild(o);
     });
   }catch(e){}
@@ -827,12 +859,28 @@ function searchItem(){
 function onPick(){
   const sel=$('sale-pick'),opt=sel.options[sel.selectedIndex];
   if(!sel.value){$('sale-found').style.display='none';return;}
-  curItemId=sel.value;curItemCost=parseFloat(opt.dataset.cost)||0;
+  curItemId=sel.value;
+  const productCost=parseFloat(opt.dataset.productCost)||0;
+  const shipping=parseFloat(opt.dataset.shipping)||0;
+  const totalCost=parseFloat(opt.dataset.cost)||0;
+  curItemCost=totalCost;
+  const retail=parseFloat(opt.dataset.retail)||0;
+  // days sitting
+  let daysHtml='';
+  if(opt.dataset.dateReceived){
+    const days=Math.floor((Date.now()-new Date(opt.dataset.dateReceived).getTime())/86400000);
+    const col=days>=60?'var(--rd)':days>=30?'#F97316':'var(--gn)';
+    daysHtml='<div class="drow" style="margin-top:6px;padding-top:6px;border-top:1px solid #86EFAC"><span class="dk2">Sitting in inventory</span><span class="dv" style="color:'+col+'">'+days+' day'+(days===1?'':'s')+'</span></div>';
+  }
   $('sf-name').textContent=opt.dataset.cat||sel.value;
   $('sf-tag').textContent=sel.value+' · ✅ Available';
-  $('sf-cost').textContent=fmt(opt.dataset.cost);
-  $('sf-retail').textContent=fmt(opt.dataset.retail);
-  $('sale-price').value=parseFloat(opt.dataset.retail).toFixed(2);
+  $('sf-breakdown').innerHTML=
+    '<div class="drow"><span class="dk2">Product Cost:</span><span class="dv">'+fmt(productCost)+'</span></div>'+
+    '<div class="drow"><span class="dk2">Shipping/Unit:</span><span class="dv">'+fmt(shipping)+'</span></div>'+
+    '<div class="drow" style="padding-top:6px;border-top:1px solid #86EFAC;font-weight:800"><span class="dk2">Total Cost:</span><span class="dv" style="color:var(--rd)">'+fmt(totalCost)+'</span></div>'+
+    '<div class="drow"><span class="dk2">Listed Retail:</span><span class="dv" style="color:var(--gn)">'+fmt(retail)+'</span></div>'+
+    daysHtml;
+  $('sale-price').value=retail.toFixed(2);
   calcSaleMargin();$('sale-found').style.display='block';$('sale-search').value=sel.value;
 }
 function calcSaleMargin(){
@@ -936,19 +984,76 @@ function renderInv(){
   empty.style.display='none';
   filtered.forEach(i=>{
     const el=document.createElement('div');el.className='ii';
+    el.style.cursor='pointer';el.style.userSelect='none';
+    el.setAttribute('onclick','openItemDetail('+JSON.stringify(i.itemId)+')');
     const priceHtml=i.level==='critical'?
       '<span class="xout">'+fmt(i.retail)+'</span> → <strong>'+fmt(i.mdPrice)+'</strong>':
       '<span>Retail: '+fmt(i.retail)+'</span>';
     el.innerHTML=
       '<div class="ii-top">'+
         '<div><div class="ii-id">'+i.itemId+'</div><div class="ii-cat">'+i.category+(i.sku?' · '+i.sku:'')+'</div></div>'+
-        '<div class="age-b '+i.level+'">'+i.days+'d</div>'+
+        '<div style="display:flex;align-items:center;gap:6px"><div class="age-b '+i.level+'">'+i.days+'d</div><span style="color:var(--gl);font-size:18px">›</span></div>'+
       '</div>'+
       '<div class="ii-prices">'+priceHtml+'<span style="color:var(--gy)">Cost: '+fmt(i.cost)+'</span></div>'+
       '<div class="sug '+i.level+'">'+i.suggest+'</div>';
     list.appendChild(el);
   });
 }
+
+// ─── Item Detail Modal ────────────────────────────────────────────
+let editingItemId='',editingItemCost=0;
+async function openItemDetail(itemId){
+  $('item-overlay').style.display='flex';
+  $('im-id').textContent=itemId;
+  $('im-details').innerHTML='<div class="loading">Loading...</div>';
+  try{
+    const d=await api({action:'itemDetail',id:itemId});
+    if(!d){$('im-details').innerHTML='<div class="alert w">Item not found.</div>';return;}
+    editingItemId=d.itemId;editingItemCost=d.totalCost;
+    $('im-retail').value=d.retail.toFixed(2);
+    $('im-cat').value=d.category;
+    $('im-sku').value=d.sku||'';
+    $('im-notes').value=d.notes||'';
+    const badge=$('im-status-badge');
+    badge.textContent=d.status;badge.className='badge '+(d.status==='Available'?'g':'r');
+    calcImMargin();
+    const agColor=d.days>=60?'var(--rd)':d.days>=30?'#F97316':'var(--gn)';
+    $('im-details').innerHTML=
+      '<div class="prv">'+
+        '<div class="prow"><span style="color:var(--md)">Date Added</span><span style="font-weight:700">'+d.dateReceived+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Days in Inventory</span><span style="font-weight:800;color:'+agColor+'">'+d.days+' days</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Shipment</span><span style="font-weight:700">'+d.shipmentId+'</span></div>'+
+        '<div class="prow" style="margin-top:6px;padding-top:8px;border-top:1px solid var(--oa)"><span style="color:var(--md)">Product Cost</span><span style="font-weight:700">'+fmt(d.productCost)+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Shipping / Unit</span><span style="font-weight:700">'+fmt(d.shippingPerUnit)+'</span></div>'+
+        '<div class="prow tot"><span>Total Cost</span><span>'+fmt(d.totalCost)+'</span></div>'+
+        '<div class="prow" style="padding-top:8px;border-top:1px solid var(--oa)"><span style="color:var(--md)">Suggested Retail</span><span style="font-weight:700;color:var(--bl)">'+fmt(d.suggestedRetail)+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Current Retail</span><span style="font-weight:800;color:var(--gn)">'+fmt(d.retail)+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Margin @ Retail</span><span style="font-weight:800;color:'+(d.margin>=40?'var(--gn)':d.margin>=20?'#F97316':'var(--rd)')+'">'+d.margin+'%</span></div>'+
+      '</div>';
+  }catch(e){$('im-details').innerHTML='<div class="alert w">Error loading item.</div>';}
+}
+function calcImMargin(){
+  const r=parseFloat($('im-retail').value)||0;
+  if(r>0&&editingItemCost>0){
+    const m=((r-editingItemCost)/r*100).toFixed(1);
+    $('im-margin-hint').textContent='Margin at this price: '+m+'%';
+    $('im-margin-hint').style.color=parseFloat(m)>=40?'var(--gn)':parseFloat(m)>=20?'#F97316':'var(--rd)';
+  } else $('im-margin-hint').textContent='';
+}
+async function saveItemEdit(){
+  const retail=$('im-retail').value;
+  if(!retail)return toast('Enter a retail price','err');
+  toast('Saving...');
+  try{
+    const r=await post({action:'updateItem',itemId:editingItemId,retail:parseFloat(retail),category:$('im-cat').value.trim(),sku:$('im-sku').value.trim(),notes:$('im-notes').value.trim()});
+    if(r.ok){
+      toast('✅ '+editingItemId+' updated!','ok');
+      closeItemModal();
+      loadInv();
+    } else toast('Error: '+r.error,'err');
+  }catch(e){toast('Error saving','err');}
+}
+function closeItemModal(e){if(!e||e.target.id==='item-overlay')$('item-overlay').style.display='none';}
 
 // ─── Reports ──────────────────────────────────────────────────────
 async function loadReports(){
