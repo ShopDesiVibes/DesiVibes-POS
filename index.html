@@ -443,6 +443,11 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
         <div class="card">
           <div class="card-ttl" id="rcv-ttl">➕ Add Item</div>
           <div class="fg">
+            <label>Item ID</label>
+            <input class="inp" id="rcv-id" type="text" placeholder="SD-01" style="text-transform:uppercase;font-weight:700;font-size:18px;letter-spacing:.05em">
+            <div class="hint">Auto-suggested — type your own (e.g. SD-01, SD-02…)</div>
+          </div>
+          <div class="fg">
             <label>Category</label>
             <select class="inp" id="rcv-cat" onchange="onColl('rcv-cat','rcv-cat-custom')">
               <option value="Navratri">🪷 Navratri</option>
@@ -740,8 +745,9 @@ async function onShpSelect(){
     const idx=cats.indexOf(t.collection);$('rcv-cat').selectedIndex=idx>=0?idx:4;
     $('rcv-spu').value=t.perUnitShipping;
     $('rcv-spu-hint').textContent='Auto: '+fmt(t.totalShippingUSD)+'÷'+t.totalUnits;
-    $('rcv-ttl').textContent='➕ Add Item '+t.nextItemId;
-    $('rcv-btn').textContent='➕ Add '+t.nextItemId+' · '+(t.totalUnits-t.itemsTagged)+' left';
+    $('rcv-ttl').textContent='➕ Add Item';
+    if(!$('rcv-id').value)$('rcv-id').value=t.nextItemId;
+    $('rcv-btn').textContent='➕ Add Item · '+(t.totalUnits-t.itemsTagged)+' left';
     const cPct=t.totalProductUSD>0?Math.min(100,Math.round(t.costTotal/t.totalProductUSD*100)):0;
     const sPct=t.totalShippingUSD>0?Math.min(100,Math.round(t.shipTotal/t.totalShippingUSD*100)):0;
     const iPct=t.totalUnits>0?Math.min(100,Math.round(t.itemsTagged/t.totalUnits*100)):0;
@@ -764,6 +770,8 @@ function calcRcv(){
 }
 async function submitRcv(){
   if(!$('rcv-shp').value)return toast('Select a shipment first','err');
+  const customId=$('rcv-id').value.trim().toUpperCase();
+  if(!customId)return toast('Enter an Item ID','err');
   if(!$('rcv-cost').value)return toast('Enter item cost','err');
   if(!$('rcv-retail').value)return toast('Enter retail price','err');
   const cv=$('rcv-cat').value;
@@ -771,8 +779,8 @@ async function submitRcv(){
   if(!cat)return toast('Enter a category','err');
   toast('Adding item...');
   try{
-    const r=await post({action:'receiveItem',shipmentId:$('rcv-shp').value,category:cat,sku:$('rcv-sku').value,costUSD:$('rcv-cost').value,shippingPerUnit:$('rcv-spu').value,retailPrice:$('rcv-retail').value});
-    if(r.ok){toast('✅ '+r.itemId+' added!','ok');$('rcv-cost').value='';$('rcv-retail').value='';$('rcv-sku').value='';$('rcv-prv').style.display='none';onShpSelect();}
+    const r=await post({action:'receiveItem',itemId:customId,shipmentId:$('rcv-shp').value,category:cat,sku:$('rcv-sku').value,costUSD:$('rcv-cost').value,shippingPerUnit:$('rcv-spu').value,retailPrice:$('rcv-retail').value});
+    if(r.ok){toast('✅ '+r.itemId+' added!','ok');$('rcv-id').value='';$('rcv-cost').value='';$('rcv-retail').value='';$('rcv-sku').value='';$('rcv-prv').style.display='none';onShpSelect();}
     else toast('Error: '+r.error,'err');
   }catch(e){toast('Error adding item','err');}
 }
