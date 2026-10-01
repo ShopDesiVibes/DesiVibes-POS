@@ -618,6 +618,39 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
 </div>
 
 <!-- ITEM DETAIL MODAL -->
+<div id="shp-overlay" onclick="closeShpModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)">
+  <div id="shp-modal" style="background:var(--wh);border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
+    <div class="m-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="m-ttl" id="sm-id" style="text-align:left;font-size:20px;color:var(--o)"></div>
+      <div id="sm-sellthru-badge" class="badge" style="font-size:12px"></div>
+    </div>
+
+    <!-- Shipment Header -->
+    <div class="prv" id="sm-header"></div>
+
+    <!-- Financial Summary -->
+    <div class="card-ttl">💰 Financial Summary</div>
+    <div class="prv" id="sm-finance"></div>
+
+    <!-- Inventory Health -->
+    <div class="card-ttl">📦 Inventory Health</div>
+    <div id="sm-health"></div>
+
+    <!-- Item-by-Item Breakdown -->
+    <div class="card-ttl">🏷️ Item Breakdown</div>
+    <div id="sm-items"></div>
+
+    <!-- Sales Log -->
+    <div id="sm-sales-section">
+      <div class="card-ttl">🧾 Sales from this Shipment</div>
+      <div id="sm-sales"></div>
+    </div>
+
+    <button class="btn gh sm" onclick="closeShpModal()">Close</button>
+  </div>
+</div>
+
 <div id="item-overlay" onclick="closeItemModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)">
   <div id="item-modal" style="background:var(--wh);border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
     <div class="m-handle"></div>
@@ -1000,6 +1033,110 @@ function renderInv(){
   });
 }
 
+// ─── Shipment Detail Modal ────────────────────────────────────────
+async function openShipmentDetail(shpId){
+  $('shp-overlay').style.display='flex';
+  $('sm-id').textContent=shpId;
+  $('sm-header').innerHTML='<div class="loading">Loading...</div>';
+  $('sm-finance').innerHTML='';$('sm-health').innerHTML='';
+  $('sm-items').innerHTML='';$('sm-sales').innerHTML='';
+  try{
+    const d=await api({action:'shipmentDetail',id:shpId});
+    if(!d){$('sm-header').innerHTML='<div class="alert w">Shipment not found.</div>';return;}
+
+    // Sell-through badge
+    const stBadge=$('sm-sellthru-badge');
+    const pct=d.sellThru;
+    stBadge.textContent=pct+'% sold';
+    stBadge.className='badge '+(pct>=80?'g':pct>=40?'w':'r');
+
+    // Header info
+    $('sm-header').innerHTML=
+      '<div class="prow"><span style="color:var(--md)">Date</span><span style="font-weight:700">'+d.date+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Supplier</span><span style="font-weight:700">'+d.supplier+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Collection</span><span style="font-weight:700">'+d.collection+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Total Units</span><span style="font-weight:700">'+d.totalUnits+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Exchange Rate</span><span style="font-weight:700">₹'+d.rate+' / $1</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Payment Method</span><span style="font-weight:700">'+d.paymentMethod+'</span></div>'+
+      (d.notes?'<div class="prow"><span style="color:var(--md)">Notes</span><span style="font-weight:700">'+d.notes+'</span></div>':'');
+
+    // Financial summary
+    const margin=d.revenue>0?((d.revenue-d.cogs)/d.revenue*100).toFixed(1):0;
+    const roi=d.totalPaid>0?((d.revenue-d.cogs)/d.totalPaid*100).toFixed(1):0;
+    const retailLeft=d.items.filter(i=>i.status==='Available').reduce((s,i)=>s+(i.retail||0),0);
+    $('sm-finance').innerHTML=
+      '<div class="prow"><span style="color:var(--md)">Total Paid</span><span style="font-weight:700">'+fmt(d.totalPaid)+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Product Cost</span><span style="font-weight:700">'+fmt(d.productUSD)+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Shipping Cost</span><span style="font-weight:700">'+fmt(d.shippingUSD)+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Per-Unit Shipping</span><span style="font-weight:700">'+fmt(d.perUnitShipping)+'</span></div>'+
+      '<div class="prow" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--oa)"><span style="color:var(--md)">Revenue (sold)</span><span style="font-weight:800;color:var(--gn)">'+fmt(d.revenue)+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">COGS (sold)</span><span style="font-weight:700">'+fmt(d.cogs)+'</span></div>'+
+      '<div class="prow tot"><span>Gross Profit</span><span>'+fmt(d.profit)+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Margin %</span><span style="font-weight:800;color:'+(parseFloat(margin)>=40?'var(--gn)':parseFloat(margin)>=20?'#F97316':'var(--rd)')+'">'+margin+'%</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">ROI on Investment</span><span style="font-weight:800;color:var(--bl)">'+roi+'%</span></div>'+
+      '<div class="prow" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--oa)"><span style="color:var(--md)">Retail Value Remaining</span><span style="font-weight:800;color:var(--o)">'+fmt(retailLeft)+'</span></div>';
+
+    // Health bars
+    const avail=d.items.filter(i=>i.status==='Available');
+    const fresh=avail.filter(i=>i.days<30).length;
+    const aging30=avail.filter(i=>i.days>=30&&i.days<60).length;
+    const aging60=avail.filter(i=>i.days>=60).length;
+    const tot=avail.length||1;
+    $('sm-health').innerHTML=
+      '<div class="prv" style="display:flex;flex-direction:column;gap:8px">'+
+      mkHealth('✅ Fresh (under 30d)',fresh,Math.round(fresh/tot*100),'var(--gn)')+
+      mkHealth('⚠️ Aging (30–60d)',aging30,Math.round(aging30/tot*100),'#F97316')+
+      mkHealth('🔴 Old (60+d)',aging60,Math.round(aging60/tot*100),'var(--rd)')+
+      '</div>';
+
+    // Per-item table
+    const itemsHtml=d.items.map(i=>{
+      const ageCol=i.days>=60?'var(--rd)':i.days>=30?'#F97316':'var(--gn)';
+      const mCol=i.margin>=40?'var(--gn)':i.margin>=20?'#F97316':'var(--rd)';
+      const statusBadge=i.status==='Available'?'<span class="badge g" style="font-size:10px;padding:2px 6px">Available</span>':'<span class="badge r" style="font-size:10px;padding:2px 6px">Sold</span>';
+      return '<div class="prv" style="margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+          '<span style="font-weight:800;color:var(--o);font-size:15px">'+i.itemId+'</span>'+
+          statusBadge+
+        '</div>'+
+        '<div class="prow"><span style="color:var(--md)">Category</span><span style="font-weight:600">'+i.category+'</span></div>'+
+        (i.sku?'<div class="prow"><span style="color:var(--md)">SKU</span><span style="font-weight:600">'+i.sku+'</span></div>':'')+
+        '<div class="prow"><span style="color:var(--md)">Product Cost</span><span style="font-weight:600">'+fmt(i.productCost)+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Shipping/Unit</span><span style="font-weight:600">'+fmt(i.shippingPerUnit)+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Total Cost</span><span style="font-weight:700;color:var(--rd)">'+fmt(i.totalCost)+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Retail Price</span><span style="font-weight:700;color:var(--gn)">'+fmt(i.retail)+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Margin</span><span style="font-weight:800;color:'+mCol+'">'+i.margin+'%</span></div>'+
+        (i.status==='Available'?'<div class="prow"><span style="color:var(--md)">Days in Stock</span><span style="font-weight:800;color:'+ageCol+'">'+i.days+' days</span></div>':'')+
+        (i.soldPrice?'<div class="prow"><span style="color:var(--md)">Sold For</span><span style="font-weight:800;color:var(--gn)">'+fmt(i.soldPrice)+'</span></div>':'')+
+      '</div>';
+    }).join('');
+    $('sm-items').innerHTML=itemsHtml||'<div class="loading">No items logged yet.</div>';
+
+    // Sales log
+    if(d.sales&&d.sales.length){
+      $('sm-sales-section').style.display='block';
+      $('sm-sales').innerHTML=d.sales.map(s=>
+        '<div class="prv" style="margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
+          '<span style="font-weight:800;color:var(--o)">'+s.saleId+'</span>'+
+          '<span class="badge '+(s.paymentStatus==='Paid'?'g':'w')+'" style="font-size:10px;padding:2px 6px">'+s.paymentStatus+'</span>'+
+        '</div>'+
+        '<div class="prow"><span style="color:var(--md)">Item</span><span style="font-weight:700">'+s.itemId+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Date</span><span>'+s.saleDate+'</span></div>'+
+        (s.customerName?'<div class="prow"><span style="color:var(--md)">Customer</span><span>'+s.customerName+(s.customerPhone?' · '+s.customerPhone:'')+'</span></div>':'')+
+        '<div class="prow"><span style="color:var(--md)">Sale Price</span><span style="font-weight:800;color:var(--gn)">'+fmt(s.salePrice)+'</span></div>'+
+        '<div class="prow"><span style="color:var(--md)">Cost</span><span>'+fmt(s.cost)+'</span></div>'+
+        '<div class="prow tot"><span>Profit</span><span>'+fmt(s.profit)+'</span></div>'+
+        '</div>'
+      ).join('');
+    } else {
+      $('sm-sales-section').style.display='block';
+      $('sm-sales').innerHTML='<div class="loading" style="font-size:13px">No sales yet from this shipment.</div>';
+    }
+  }catch(e){$('sm-header').innerHTML='<div class="alert w">Error loading shipment.</div>';}
+}
+function closeShpModal(e){if(!e||e.target.id==='shp-overlay')$('shp-overlay').style.display='none';}
+
 // ─── Item Detail Modal ────────────────────────────────────────────
 let editingItemId='',editingItemCost=0;
 async function openItemDetail(itemId){
@@ -1082,8 +1219,9 @@ async function loadReports(){
       if(shp.available>0&&shp.oldestDays>=60)status='<div style="font-size:11px;color:var(--rd);font-weight:600;margin-top:4px">🔴 Oldest item '+shp.oldestDays+' days · Mark down!</div>';
       else if(shp.available>0&&shp.oldestDays>=30)status='<div style="font-size:11px;color:#C2410C;font-weight:600;margin-top:4px">⚠️ '+shp.available+' items unsold · oldest '+shp.oldestDays+' days</div>';
       const el=document.createElement('div');el.className='sr';
+      el.style.cursor='pointer';
       el.innerHTML=
-        '<div class="sr-top"><div><div class="sr-id">'+shp.id+'</div><div class="sr-sub">'+shp.supplier+' · '+shp.date+'</div></div><div class="coll-tag">'+shp.collection+'</div></div>'+
+        '<div class="sr-top"><div><div class="sr-id">'+shp.id+'</div><div class="sr-sub">'+shp.supplier+' · '+shp.date+'</div></div><div style="display:flex;align-items:center;gap:6px"><div class="coll-tag">'+shp.collection+'</div><span style="color:var(--gl);font-size:18px">›</span></div></div>'+
         '<div class="s3">'+
           '<div class="sc"><div class="sv2">'+shp.received+'</div><div class="sk">Received</div></div>'+
           '<div class="sc"><div class="sv2" style="color:var(--gn)">'+shp.sold+'</div><div class="sk">Sold</div></div>'+
@@ -1092,6 +1230,7 @@ async function loadReports(){
         '<div class="mrow" style="font-size:12px;padding:6px 0 4px;border:none"><span class="mk">Revenue · Cost · Profit</span><span class="mv gn" style="font-size:11px">'+fmt(shp.revenue)+' · '+fmt(shp.cogs)+' · '+fmt(shp.profit)+'</span></div>'+
         '<div class="mp"><div class="mf" style="width:'+pct+'%;background:'+bc+'"></div></div>'+
         status;
+      el.onclick=()=>openShipmentDetail(shp.id);
       cont.appendChild(el);
     });
   }catch(e){toast('Error loading reports','err');}
