@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#E8651A">
+<title>🪻 Desi Vibes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ── PASTE YOUR API URL BELOW ──────────────────────────────────── */
+/* const API_URL is set in the script block at the bottom          */
+
+:root{
+  --o:#E8651A;--ol:#F5803E;--ob:#FFF4EE;--oa:#FFE4D0;
+  --dk:#1C1917;--md:#44403C;--gy:#78716C;--gl:#A8A29E;
+  --br:#E7E5E4;--bg:#FAF9F7;--wh:#FFFFFF;
+  --gn:#16A34A;--gnl:#DCFCE7;
+  --rd:#DC2626;--rdl:#FEF2F2;
+  --bl:#2563EB;--bll:#EFF6FF;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --sh2:0 4px 16px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.08);
+  --r:14px;--r2:10px;
+  --nav:64px;
+  --hdr:60px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%;background:var(--bg)}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--dk);
+  height:100%;min-height:100vh;
+  font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+  overscroll-behavior:none;
+}
+#app{
+  display:flex;flex-direction:column;
+  min-height:100vh;
+  min-height:100dvh;
+  max-width:480px;
+  margin:0 auto;
+  position:relative;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+#hdr{
+  background:var(--o);
+  padding:env(safe-area-inset-top,0px) 0 0;
+  position:sticky;top:0;z-index:50;
+  flex-shrink:0;
+}
+.hdr-inner{
+  height:var(--hdr);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+}
+#hdr h1{
+  font-size:20px;font-weight:900;color:#fff;
+  letter-spacing:-0.025em;line-height:1;
+}
+#hdr-sub{font-size:11px;color:rgba(255,255,255,.75);font-weight:500;margin-top:2px}
+#pending-pill{
+  background:rgba(255,255,255,.2);
+  border:1.5px solid rgba(255,255,255,.4);
+  color:#fff;font-size:11px;font-weight:800;
+  border-radius:20px;padding:4px 11px;
+  display:none;white-space:nowrap;
+  backdrop-filter:blur(4px);
+}
+
+/* ── BODY ────────────────────────────────────────────────────── */
+#body{
+  flex:1;
+  overflow-y:auto;overflow-x:hidden;
+  padding:14px 14px calc(var(--nav) + env(safe-area-inset-bottom,0px) + 8px);
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+/* ── BOTTOM NAV ──────────────────────────────────────────────── */
+#nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:var(--wh);
+  border-top:1px solid var(--br);
+  display:flex;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  z-index:50;
+  box-shadow:0 -2px 12px rgba(0,0,0,.06);
+}
+.ni{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:8px 2px 6px;
+  font-size:9.5px;font-weight:700;color:var(--gl);
+  gap:3px;cursor:pointer;min-height:var(--nav);
+  letter-spacing:.02em;text-transform:uppercase;
+  user-select:none;position:relative;
+  transition:color .15s;
+}
+.ni.on{color:var(--o)}
+.ni .ico{font-size:21px;line-height:1;transition:transform .15s}
+.ni.on .ico{transform:scale(1.12)}
+.ndot{
+  position:absolute;top:6px;right:calc(50% - 12px);
+  width:7px;height:7px;background:var(--rd);
+  border-radius:50%;border:2px solid var(--wh);display:none;
+}
+
+/* ── SCREEN ──────────────────────────────────────────────────── */
+.scr{display:none;flex-direction:column;gap:10px;animation:fadeIn .18s ease}
+.scr.on{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ── CARDS ───────────────────────────────────────────────────── */
+.card{
+  background:var(--wh);border-radius:var(--r);
+  box-shadow:var(--sh);padding:16px;
+  border:1px solid var(--br);
+}
+.card-ttl{
+  font-size:11px;font-weight:700;color:var(--md);
+  letter-spacing:.06em;text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:5px;
+}
+
+/* ── STAT GRID ───────────────────────────────────────────────── */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.scard{
+  background:var(--wh);border-radius:12px;
+  box-shadow:var(--sh);padding:14px 16px;
+  border:1px solid var(--br);
+}
+.sval{
+  font-size:28px;font-weight:900;color:var(--o);
+  letter-spacing:-0.03em;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.sval.gn{color:var(--gn)}.sval.sm{font-size:20px}
+.slbl{font-size:10px;color:var(--gy);font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── METRIC ROW ──────────────────────────────────────────────── */
+.mrow{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--br);font-size:13px;
+}
+.mrow:last-child{border-bottom:none}
+.mk{color:var(--gy)}.mv{font-weight:700;font-variant-numeric:tabular-nums}
+.mv.gn{color:var(--gn)}.mv.rd{color:var(--rd)}.mv.or{color:var(--o)}.mv.bl{color:var(--bl)}
+
+/* ── FORMS ───────────────────────────────────────────────────── */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fg:last-child{margin-bottom:0}
+label{font-size:10px;font-weight:700;color:var(--md);letter-spacing:.06em;text-transform:uppercase}
+.inp{
+  background:var(--bg);border:1.5px solid var(--br);border-radius:10px;
+  padding:13px 14px;font-size:16px;color:var(--dk);
+  font-family:'Inter',system-ui,sans-serif;width:100%;outline:none;
+  transition:border-color .15s,background .15s;
+  -webkit-appearance:none;min-height:50px;
+}
+.inp:focus{border-color:var(--o);background:var(--wh)}
+select.inp{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2378716C' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:11px;color:var(--gy);line-height:1.4;margin-top:3px}
+hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
+
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+.btn{
+  border-radius:12px;border:none;padding:15px;font-size:15px;font-weight:700;
+  font-family:'Inter',system-ui,sans-serif;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  width:100%;transition:opacity .15s,transform .1s;min-height:52px;
+  -webkit-appearance:none;letter-spacing:-.01em;
+}
+.btn:active{opacity:.8;transform:scale(.98)}
+.btn.p{background:var(--o);color:#fff}
+.btn.g{background:var(--gn);color:#fff}
+.btn.r{background:var(--rd);color:#fff}
+.btn.gh{background:var(--bg);color:var(--md);border:1.5px solid var(--br)}
+.btn.sm{padding:12px;font-size:13px;min-height:46px}
+
+/* ── ALERTS ──────────────────────────────────────────────────── */
+.alert{border-radius:10px;padding:12px 14px;font-size:12px;font-weight:500;
+  display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.alert.w{background:#FFF7ED;color:#9A3412;border:1px solid #FED7AA}
+.alert.i{background:var(--bll);color:#1E40AF;border:1px solid #BFDBFE}
+.alert.ok{background:var(--gnl);color:#14532D;border:1px solid #86EFAC}
+
+/* ── PREVIEW BOX ─────────────────────────────────────────────── */
+.prv{background:var(--ob);border:1px solid var(--oa);border-radius:10px;padding:13px 14px}
+.prow{display:flex;justify-content:space-between;padding:3px 0;font-size:13px}
+.prow.tot{border-top:1px solid var(--oa);padding-top:10px;margin-top:8px;
+  font-weight:800;font-size:17px;color:var(--o)}
+
+/* ── TALLY BOX ───────────────────────────────────────────────── */
+.tally{background:var(--bll);border:1px solid #BFDBFE;border-radius:12px;padding:14px}
+.t-ttl{font-size:11px;font-weight:700;color:#1E40AF;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.trow{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.tv{font-weight:700;font-variant-numeric:tabular-nums}
+.prog{background:var(--br);border-radius:4px;height:7px;overflow:hidden;margin:4px 0 10px}
+.pfill{height:100%;border-radius:4px}
+.pfill.o{background:var(--o)}.pfill.g{background:var(--gn)}.pfill.b{background:var(--bl)}
+
+/* ── ITEM FOUND ──────────────────────────────────────────────── */
+.found{background:var(--gnl);border:1.5px solid #86EFAC;border-radius:12px;padding:14px}
+.found-name{font-size:16px;font-weight:800}
+.found-tag{font-size:12px;color:var(--gy);margin-top:3px}
+.drow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.dk2{color:var(--gy)}.dv{font-weight:700}
+
+/* ── PENDING CARD ────────────────────────────────────────────── */
+.pc{
+  background:var(--wh);border:1.5px solid var(--oa);
+  border-radius:14px;padding:15px;
+  display:flex;flex-direction:column;gap:8px;
+  box-shadow:0 2px 8px rgba(232,101,26,.1);
+}
+.pc-id{font-size:13px;font-weight:800;color:var(--o)}
+.pc-name{font-size:12px;color:var(--gy)}
+.pc-amt{font-size:30px;font-weight:900;color:var(--dk);
+  letter-spacing:-0.03em;font-variant-numeric:tabular-nums}
+.pc-foot{display:flex;align-items:center;justify-content:space-between}
+.badge{border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700}
+.badge.r{background:var(--rd);color:#fff}
+.badge.o{background:var(--o);color:#fff}
+.badge.g{background:var(--gn);color:#fff}
+
+/* ── INVENTORY ITEM ──────────────────────────────────────────── */
+.ii{background:var(--wh);border:1px solid var(--br);border-radius:12px;padding:14px;
+  display:flex;flex-direction:column;gap:6px;box-shadow:var(--sh)}
+.ii-top{display:flex;justify-content:space-between;align-items:flex-start}
+.ii-id{font-size:14px;font-weight:800;color:var(--o)}
+.ii-cat{font-size:12px;color:var(--gy)}
+.age-b{border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;white-space:nowrap}
+.age-b.good{background:var(--gnl);color:var(--gn)}
+.age-b.warn{background:#FFF7ED;color:#9A3412}
+.age-b.critical{background:var(--rdl);color:var(--rd)}
+.sug{font-size:12px;padding:7px 11px;border-radius:8px;font-weight:500;line-height:1.4}
+.sug.good{background:var(--gnl);color:var(--gn)}
+.sug.warn{background:#FFF7ED;color:#C2410C}
+.sug.critical{background:var(--rdl);color:var(--rd)}
+.ii-prices{display:flex;gap:14px;font-size:12px;font-variant-numeric:tabular-nums}
+.xout{text-decoration:line-through;color:var(--rd)}
+
+/* ── SHIPMENT REPORT CARD ────────────────────────────────────── */
+.sr{background:var(--wh);border:1px solid var(--br);border-radius:12px;padding:14px;
+  box-shadow:var(--sh)}
+.sr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.sr-id{font-size:14px;font-weight:800;color:var(--o)}
+.sr-sub{font-size:12px;color:var(--gy)}
+.coll-tag{background:var(--ob);color:var(--o);border-radius:20px;
+  padding:4px 11px;font-size:11px;font-weight:700;white-space:nowrap}
+.s3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sc{background:var(--bg);border-radius:8px;padding:8px;text-align:center}
+.sv2{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.sk{font-size:10px;color:var(--gy);margin-top:2px}
+.mp{background:var(--br);border-radius:3px;height:5px;overflow:hidden;margin-top:6px}
+.mf{height:100%;border-radius:3px}
+
+/* ── FILTER TABS ─────────────────────────────────────────────── */
+.tabs{display:flex;background:var(--bg);border:1px solid var(--br);
+  border-radius:10px;padding:3px;gap:2px}
+.tab{flex:1;padding:9px 4px;border-radius:8px;border:none;background:transparent;
+  font-size:12px;font-weight:700;font-family:'Inter',system-ui,sans-serif;
+  color:var(--gy);cursor:pointer;text-align:center;transition:all .15s}
+.tab.on{background:var(--wh);color:var(--o);box-shadow:var(--sh)}
+
+/* ── SECTION LABEL ───────────────────────────────────────────── */
+.sl{font-size:11px;font-weight:700;color:var(--md);
+  letter-spacing:.06em;text-transform:uppercase;padding:2px 0}
+
+/* ── LOADING ─────────────────────────────────────────────────── */
+.loading{text-align:center;padding:32px 0;color:var(--gy);font-size:13px}
+.loading::before{content:'⏳ ';font-size:20px;display:block;margin-bottom:8px}
+
+/* ── MODAL ───────────────────────────────────────────────────── */
+#overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;
+  display:none;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(2px);
+}
+#overlay.on{display:flex}
+#modal{
+  background:var(--wh);border-radius:24px 24px 0 0;
+  padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));
+  width:100%;max-width:480px;
+  max-height:85vh;overflow-y:auto;
+  display:flex;flex-direction:column;gap:12px;
+}
+.m-handle{width:44px;height:5px;background:var(--br);border-radius:3px;margin:0 auto 6px}
+.m-ttl{font-size:18px;font-weight:800;text-align:center}
+.m-amt{text-align:center;font-size:38px;font-weight:900;color:var(--o);
+  letter-spacing:-0.03em;font-variant-numeric:tabular-nums}
+.m-sub{text-align:center;font-size:12px;color:var(--gy);margin-top:-8px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pb{
+  padding:14px 8px;border-radius:12px;border:1.5px solid var(--br);
+  background:var(--bg);font-size:13px;font-weight:700;
+  font-family:'Inter',system-ui,sans-serif;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+  gap:5px;min-height:70px;transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.pb.on{border-color:var(--o);background:var(--ob);color:var(--o)}
+.pb .pi{font-size:24px}
+
+/* ── TOAST ───────────────────────────────────────────────────── */
+#toast{
+  position:fixed;top:calc(var(--hdr) + env(safe-area-inset-top,0px) + 12px);
+  left:50%;transform:translateX(-50%);
+  background:var(--dk);color:#fff;
+  padding:12px 22px;border-radius:30px;
+  font-size:14px;font-weight:700;z-index:300;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+  white-space:nowrap;max-width:90vw;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+#toast.on{opacity:1}
+#toast.ok{background:var(--gn)}
+#toast.err{background:var(--rd)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="hdr">
+    <div class="hdr-inner">
+      <div>
+        <h1>🪻 Desi Vibes</h1>
+        <div id="hdr-sub">Dashboard</div>
+      </div>
+      <div id="pending-pill">0 Pending</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div id="body">
+
+    <!-- ① DASHBOARD -->
+    <div class="scr on" id="s-dashboard">
+      <div class="sgrid">
+        <div class="scard"><div class="sval" id="d-avail">—</div><div class="slbl">Available</div></div>
+        <div class="scard"><div class="sval" id="d-sold">—</div><div class="slbl">Sold</div></div>
+        <div class="scard"><div class="sval gn sm" id="d-rev">—</div><div class="slbl">Revenue</div></div>
+        <div class="scard"><div class="sval gn sm" id="d-profit">—</div><div class="slbl">Gross Profit</div></div>
+      </div>
+      <div class="scard" style="border-radius:12px">
+        <div class="sval sm or" id="d-retail">—</div>
+        <div class="slbl">Inventory Value (@ Retail)</div>
+      </div>
+      <div class="alert w" id="d-pend-alert" style="display:none"></div>
+      <div class="card">
+        <div class="card-ttl">📈 Quick Stats</div>
+        <div class="mrow"><span class="mk">Profit Margin</span><span class="mv gn" id="d-margin">—</span></div>
+        <div class="mrow"><span class="mk">Total Shipments</span><span class="mv" id="d-shp">—</span></div>
+        <div class="mrow"><span class="mk">Total Items Received</span><span class="mv" id="d-tot">—</span></div>
+        <div class="mrow"><span class="mk">Items Aging 30+ days</span><span class="mv" id="d-age">—</span></div>
+      </div>
+      <button class="btn r sm" id="d-pend-btn" style="display:none" onclick="go('pending')">⏳ View Pending Payments →</button>
+      <button class="btn gh sm" onclick="go('inventory')">📋 Check Inventory Age →</button>
+    </div>
+
+    <!-- ② SHIPMENT -->
+    <div class="scr" id="s-shipment">
+      <div class="card">
+        <div class="fg">
+          <label>Supplier</label>
+          <select class="inp" id="shp-sup" onchange="onSup()">
+            <option value="">Loading...</option>
+          </select>
+        </div>
+        <div class="fg" id="shp-newsup" style="display:none">
+          <label>New Supplier Name</label>
+          <input class="inp" id="shp-newsup-val" placeholder="Enter supplier name..." type="text">
+        </div>
+        <hr class="div">
+        <div class="fg">
+          <label>Collection</label>
+          <select class="inp" id="shp-coll" onchange="onColl('shp-coll','shp-coll-custom')">
+            <option value="Navratri">🪷 Navratri</option>
+            <option value="Diwali">🪔 Diwali</option>
+            <option value="New Year">🎉 New Year</option>
+            <option value="Everyday Wear">👗 Everyday Wear</option>
+            <option value="__other__">✏️ Other...</option>
+          </select>
+        </div>
+        <div class="fg" id="shp-coll-grp" style="display:none">
+          <label>Custom Collection Name</label>
+          <input class="inp" id="shp-coll-custom" placeholder="e.g. Summer Collection" type="text">
+        </div>
+        <div class="row2">
+          <div class="fg"><label>Date</label><input class="inp" id="shp-date" type="date"></div>
+          <div class="fg"><label>Total Units</label><input class="inp" id="shp-units" type="number" min="1" placeholder="20" oninput="calcShp()"></div>
+        </div>
+        <hr class="div">
+        <div class="row2">
+          <div class="fg"><label>Product Cost (INR)</label><input class="inp" id="shp-pinr" type="number" placeholder="₹42000" oninput="calcShp()"></div>
+          <div class="fg"><label>Shipping Cost (INR)</label><input class="inp" id="shp-sinr" type="number" placeholder="₹12600" oninput="calcShp()"></div>
+        </div>
+        <div class="fg">
+          <label>Total I Paid (USD)</label>
+          <input class="inp" id="shp-usd" type="number" step="0.01" placeholder="$650.00" oninput="calcShp()">
+          <div class="hint">All-in: Xoom / bank fees included</div>
+        </div>
+        <div class="prv" id="shp-prv" style="display:none">
+          <div class="prow"><span style="color:var(--md)">Rate</span><span id="pr-rate" style="font-weight:700"></span></div>
+          <div class="prow"><span style="color:var(--md)">Product (USD)</span><span id="pr-prod"></span></div>
+          <div class="prow"><span style="color:var(--md)">Shipping (USD)</span><span id="pr-ship"></span></div>
+          <div class="prow tot"><span>Total Paid</span><span id="pr-tot"></span></div>
+        </div>
+        <div class="fg" style="margin-top:12px">
+          <label>Payment Method</label>
+          <select class="inp" id="shp-pay">
+            <option>Xoom</option><option>Indian Bank Account</option>
+            <option>Cash</option><option>Credit Card</option><option>Pending</option>
+          </select>
+        </div>
+        <div class="fg"><label>Notes (Optional)</label><input class="inp" id="shp-notes" type="text" placeholder="Any notes..."></div>
+        <button class="btn p" style="margin-top:4px" onclick="submitShp()">📤 Log Shipment</button>
+      </div>
+    </div>
+
+    <!-- ③ RECEIVE -->
+    <div class="scr" id="s-receive">
+      <div class="fg">
+        <label>Select Shipment</label>
+        <select class="inp" id="rcv-shp" onchange="onShpSelect()">
+          <option value="">— Choose a shipment —</option>
+        </select>
+      </div>
+      <div id="rcv-tally" style="display:none">
+        <div class="tally" id="rcv-tally-box"></div>
+        <div class="card">
+          <div class="card-ttl" id="rcv-ttl">➕ Add Item</div>
+          <div class="fg">
+            <label>Category</label>
+            <select class="inp" id="rcv-cat" onchange="onColl('rcv-cat','rcv-cat-custom')">
+              <option value="Navratri">🪷 Navratri</option>
+              <option value="Diwali">🪔 Diwali</option>
+              <option value="New Year">🎉 New Year</option>
+              <option value="Everyday Wear">👗 Everyday Wear</option>
+              <option value="__other__">✏️ Other...</option>
+            </select>
+          </div>
+          <div class="fg" id="rcv-cat-grp" style="display:none">
+            <label>Custom Category</label>
+            <input class="inp" id="rcv-cat-custom" placeholder="e.g. Chaniya Choli" type="text">
+          </div>
+          <div class="fg"><label>SKU (Optional)</label><input class="inp" id="rcv-sku" type="text" placeholder="ANK-RED-L"></div>
+          <div class="row2">
+            <div class="fg">
+              <label>Item Cost (USD)</label>
+              <input class="inp" id="rcv-cost" type="number" step="0.01" placeholder="$24.85" oninput="calcRcv()">
+            </div>
+            <div class="fg">
+              <label>Shipping / Unit</label>
+              <input class="inp" id="rcv-spu" type="number" step="0.01" placeholder="$7.47" oninput="calcRcv()">
+              <div class="hint" id="rcv-spu-hint">Auto from shipment</div>
+            </div>
+          </div>
+          <div class="prv" id="rcv-prv" style="display:none">
+            <div class="prow"><span style="color:var(--md)">Total Cost</span><span id="rcp-cost" style="font-weight:700"></span></div>
+            <div class="prow tot" style="color:var(--gn)"><span>Suggested Retail (50%)</span><span id="rcp-retail"></span></div>
+          </div>
+          <div class="fg">
+            <label>Actual Retail Price</label>
+            <input class="inp" id="rcv-retail" type="number" step="0.01" placeholder="$64.00">
+            <div class="hint">Adjust if pricing differently</div>
+          </div>
+          <button class="btn p" id="rcv-btn" onclick="submitRcv()">➕ Add Item</button>
+        </div>
+      </div>
+      <div id="rcv-empty" class="alert i">Select a shipment above to start receiving items.</div>
+    </div>
+
+    <!-- ④ SALE -->
+    <div class="scr" id="s-sale">
+      <div class="card">
+        <div class="fg">
+          <label>Search by Item ID</label>
+          <div style="display:flex;gap:8px">
+            <input class="inp" id="sale-search" type="text" placeholder="DV-021"
+              style="text-transform:uppercase;flex:1" onkeyup="if(event.key==='Enter')searchItem()">
+            <button class="btn gh sm" style="width:auto;padding:0 16px;flex-shrink:0" onclick="searchItem()">Go</button>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Or Pick Available Item</label>
+          <select class="inp" id="sale-pick" onchange="onPick()">
+            <option value="">— Choose an item —</option>
+          </select>
+        </div>
+        <div id="sale-found" style="display:none;margin-bottom:4px">
+          <div class="found">
+            <div class="found-name" id="sf-name"></div>
+            <div class="found-tag" id="sf-tag"></div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px">
+              <div class="drow"><span class="dk2">Your Cost:</span><span class="dv" id="sf-cost"></span></div>
+              <div class="drow"><span class="dk2">Listed Retail:</span><span class="dv" id="sf-retail"></span></div>
+            </div>
+          </div>
+        </div>
+        <hr class="div">
+        <div class="fg">
+          <label>Sale Price ($)</label>
+          <input class="inp" id="sale-price" type="number" step="0.01" placeholder="Enter amount" oninput="calcSaleMargin()">
+          <div class="hint" id="sale-margin"></div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>Customer Name</label><input class="inp" id="sale-name" type="text" placeholder="Priya Shah"></div>
+          <div class="fg"><label>Phone (Optional)</label><input class="inp" id="sale-phone" type="tel" placeholder="864-555-0192"></div>
+        </div>
+        <div class="fg">
+          <label>Payment Method</label>
+          <select class="inp" id="sale-pay" onchange="onSalePay()">
+            <option>Cash</option><option>Credit Card</option><option>Zelle</option>
+            <option>Venmo</option><option>PayPal</option><option>CashApp</option>
+            <option>Pending</option><option value="__other__">Other...</option>
+          </select>
+        </div>
+        <div class="fg" id="sale-other-grp" style="display:none">
+          <label>Specify Method</label>
+          <input class="inp" id="sale-other" type="text" placeholder="e.g. Bank Transfer">
+        </div>
+        <button class="btn g" onclick="submitSale()">✅ Complete Sale</button>
+      </div>
+    </div>
+
+    <!-- ⑤ PENDING -->
+    <div class="scr" id="s-pending">
+      <div id="pend-summary" class="alert w" style="display:none"></div>
+      <div id="pend-list"></div>
+      <button class="btn gh sm" onclick="sendReminder()">📧 Email Reminder to Myself + Tupi</button>
+      <div id="pend-empty" class="alert ok" style="display:none">✅ No pending payments — all clear!</div>
+    </div>
+
+    <!-- ⑥ INVENTORY -->
+    <div class="scr" id="s-inventory">
+      <div class="tabs">
+        <div class="tab on" onclick="filterInv('all',this)">All Items</div>
+        <div class="tab" onclick="filterInv('30',this)">⚠️ 30+ days</div>
+        <div class="tab" onclick="filterInv('60',this)">🔴 60+ days</div>
+      </div>
+      <div id="inv-list"></div>
+      <div id="inv-empty" class="loading" style="display:none">No items in this filter.</div>
+    </div>
+
+    <!-- ⑦ REPORTS -->
+    <div class="scr" id="s-reports">
+      <div class="card">
+        <div class="card-ttl">💼 Overall Summary</div>
+        <div class="mrow"><span class="mk">Total Invested (USD)</span><span class="mv or" id="rp-inv">—</span></div>
+        <div class="mrow"><span class="mk">Total Revenue</span><span class="mv gn" id="rp-rev">—</span></div>
+        <div class="mrow"><span class="mk">Gross Profit</span><span class="mv gn" id="rp-profit">—</span></div>
+        <div class="mrow"><span class="mk">Avg Margin</span><span class="mv gn" id="rp-margin">—</span></div>
+        <div class="mrow"><span class="mk">Remaining (Cost)</span><span class="mv" id="rp-coh">—</span></div>
+        <div class="mrow"><span class="mk">Remaining (Retail)</span><span class="mv or" id="rp-roh">—</span></div>
+      </div>
+      <div class="card"><div class="card-ttl">📦 Inventory Health</div><div id="rp-health"></div></div>
+      <div class="sl">📋 By Shipment</div>
+      <div id="rp-shp"><div class="loading">Loading...</div></div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- BOTTOM NAV -->
+  <div id="nav">
+    <div class="ni on" onclick="go('dashboard')"><span class="ico">📊</span>Dashboard</div>
+    <div class="ni" onclick="go('shipment')"><span class="ico">📤</span>Shipment</div>
+    <div class="ni" onclick="go('receive')"><span class="ico">📦</span>Receive</div>
+    <div class="ni" onclick="go('sale')"><span class="ico">💳</span>Sale</div>
+    <div class="ni" onclick="go('pending')"><span class="ico">⏳</span>Pending<div class="ndot" id="ndot"></div></div>
+    <div class="ni" onclick="go('inventory')"><span class="ico">📋</span>Inventory</div>
+    <div class="ni" onclick="go('reports')"><span class="ico">📈</span>Reports</div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- MODAL -->
+<div id="overlay" onclick="closeOverlay(event)">
+  <div id="modal">
+    <div class="m-handle"></div>
+    <div class="m-ttl" id="m-ttl">How did they pay?</div>
+    <div class="m-amt" id="m-amt"></div>
+    <div class="m-sub" id="m-sub"></div>
+    <div class="pgrid">
+      <button class="pb" onclick="selPay(this,'Cash')"><span class="pi">💵</span>Cash</button>
+      <button class="pb" onclick="selPay(this,'Credit Card')"><span class="pi">💳</span>Credit Card</button>
+      <button class="pb" onclick="selPay(this,'Zelle')"><span class="pi">🟢</span>Zelle</button>
+      <button class="pb" onclick="selPay(this,'Venmo')"><span class="pi">🔵</span>Venmo</button>
+      <button class="pb" onclick="selPay(this,'PayPal')"><span class="pi">🅿️</span>PayPal</button>
+      <button class="pb" onclick="selPay(this,'CashApp')"><span class="pi">💚</span>CashApp</button>
+    </div>
+    <div class="fg"><label>Or Type Method</label>
+      <input class="inp" id="m-other" type="text" placeholder="e.g. Check, Bank Wire...">
+    </div>
+    <button class="btn g" id="m-confirm" onclick="confirmPaid()">✅ Confirm Payment</button>
+    <button class="btn gh sm" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── CONFIG — PASTE YOUR GAS WEB APP URL HERE ────────────────────
+const API_URL = 'const API_URL = 'https://script.google.com/macros/s/AKfycbyvjHcugro2tBPfbLHqhFmjvcs8RDcA9wRatKQqGrWsBAJrOGudeo9JzrtV6NtxblC9mA/exec';
+// ─────────────────────────────────────────────────────────────────
+
+// ─── State ────────────────────────────────────────────────────────
+let cur='dashboard', invData=[], modalSaleId='', selPayMethod='', curItemId='', curItemCost=0;
+const TITLES={dashboard:'Dashboard',shipment:'Log Shipment',receive:'Receive Items',sale:'Log Sale',pending:'Pending Payments',inventory:'Inventory Age',reports:'Reports'};
+const SCREENS=['dashboard','shipment','receive','sale','pending','inventory','reports'];
+
+// ─── API ──────────────────────────────────────────────────────────
+async function api(params) {
+  const url = API_URL + '?' + new URLSearchParams(params).toString();
+  const r = await fetch(url);
+  return r.json();
+}
+async function post(data) {
+  const r = await fetch(API_URL, { method:'POST', body: JSON.stringify(data) });
+  return r.json();
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+function fmt(n){return'$'+(parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function toast(msg,type=''){
+  const t=$('toast');t.textContent=msg;t.className='on '+(type||'');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2800);
+}
+
+// ─── Navigation ───────────────────────────────────────────────────
+const LOADERS={dashboard:loadDash,shipment:loadShpForm,receive:loadRcvForm,sale:loadSaleForm,pending:loadPending,inventory:loadInv,reports:loadReports};
+function go(name){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach((n,i)=>{n.classList.toggle('on',SCREENS[i]===name);});
+  $('s-'+name).classList.add('on');
+  $('hdr-sub').textContent=TITLES[name]||name;
+  $('body').scrollTop=0;
+  cur=name;
+  if(LOADERS[name])LOADERS[name]();
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────
+async function loadDash(){
+  try{
+    const d=await api({action:'dashboard'});
+    $('d-avail').textContent=d.available;
+    $('d-sold').textContent=d.sold;
+    $('d-rev').textContent=fmt(d.revenue);
+    $('d-profit').textContent=fmt(d.profit);
+    $('d-retail').textContent=fmt(d.retailValue);
+    $('d-margin').textContent=d.margin+'%';
+    $('d-margin').className='mv '+(d.margin>=40?'gn':d.margin>=20?'or':'rd');
+    $('d-shp').textContent=d.totalShipments;
+    $('d-tot').textContent=d.totalItems;
+    const ag=$('d-age');ag.textContent=d.aging30+' items';ag.className='mv '+(d.aging30>0?'rd':'gn');
+    const pa=$('d-pend-alert'),pb=$('d-pend-btn'),pill=$('pending-pill'),ndot=$('ndot');
+    if(d.pendingCount>0){
+      pa.style.display='flex';pa.textContent='⚠️ '+d.pendingCount+' sale'+(d.pendingCount>1?'s have':' has')+' unpaid balances · '+fmt(d.pendingAmt)+' owed';
+      pb.style.display='flex';pill.style.display='block';pill.textContent=d.pendingCount+' Pending';ndot.style.display='block';
+    } else {
+      pa.style.display='none';pb.style.display='none';pill.style.display='none';ndot.style.display='none';
+    }
+  } catch(e){toast('Error loading dashboard','err');}
+}
+
+// ─── Shipment Form ────────────────────────────────────────────────
+async function loadShpForm(){
+  $('shp-date').value=new Date().toISOString().split('T')[0];
+  try{
+    const sups=await api({action:'suppliers'});
+    const sel=$('shp-sup');
+    sel.innerHTML='<option value="">— Select Supplier —</option>';
+    sups.forEach(s=>{const o=document.createElement('option');o.value=s.name;o.textContent=s.name;sel.appendChild(o);});
+    const n=document.createElement('option');n.value='__new__';n.textContent='➕ Add New Supplier...';sel.appendChild(n);
+  }catch(e){}
+}
+function onSup(){$('shp-newsup').style.display=$('shp-sup').value==='__new__'?'block':'none';}
+function onColl(selId,inputId){
+  const v=$(selId).value,grpId=selId==='shp-coll'?'shp-coll-grp':selId==='rcv-cat'?'rcv-cat-grp':'';
+  if(grpId)$(grpId).style.display=v==='__other__'?'block':'none';
+}
+function calcShp(){
+  const pINR=parseFloat($('shp-pinr').value)||0,sINR=parseFloat($('shp-sinr').value)||0;
+  const tINR=pINR+sINR,tUSD=parseFloat($('shp-usd').value)||0,box=$('shp-prv');
+  if(tUSD>0&&tINR>0){
+    const rate=tINR/tUSD,pUSD=tUSD*(pINR/tINR),shUSD=tUSD-pUSD;
+    $('pr-rate').textContent='1 USD = '+rate.toFixed(1)+' INR';
+    $('pr-prod').textContent=fmt(pUSD);$('pr-ship').textContent=fmt(shUSD);$('pr-tot').textContent=fmt(tUSD);
+    box.style.display='block';
+  } else if(tUSD>0){
+    $('pr-rate').textContent='Enter INR to see rate';$('pr-prod').textContent='—';$('pr-ship').textContent='—';$('pr-tot').textContent=fmt(tUSD);box.style.display='block';
+  } else {box.style.display='none';}
+}
+async function submitShp(){
+  let sup=$('shp-sup').value;
+  if(sup==='__new__')sup=$('shp-newsup-val').value.trim();
+  if(!sup)return toast('Select or enter a supplier','err');
+  const cv=$('shp-coll').value;
+  const coll=cv==='__other__'?$('shp-coll-custom').value.trim():cv;
+  if(!coll)return toast('Enter a collection name','err');
+  if(!$('shp-usd').value)return toast('Enter total USD paid','err');
+  toast('Saving shipment...');
+  try{
+    const r=await post({action:'logShipment',supplier:sup,collection:coll,date:$('shp-date').value,totalUnits:$('shp-units').value,productINR:$('shp-pinr').value,shippingINR:$('shp-sinr').value,totalUSD:$('shp-usd').value,paymentMethod:$('shp-pay').value,notes:$('shp-notes').value});
+    if(r.ok){toast('✅ Shipment '+r.id+' logged!','ok');$('shp-pinr').value='';$('shp-sinr').value='';$('shp-usd').value='';$('shp-units').value='';$('shp-notes').value='';$('shp-prv').style.display='none';}
+    else toast('Error: '+r.error,'err');
+  }catch(e){toast('Error saving shipment','err');}
+}
+
+// ─── Receive ──────────────────────────────────────────────────────
+async function loadRcvForm(){
+  try{
+    const shps=await api({action:'shipments'});
+    const sel=$('rcv-shp');
+    sel.innerHTML='<option value="">— Choose a shipment —</option>';
+    shps.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.label;sel.appendChild(o);});
+  }catch(e){}
+}
+async function onShpSelect(){
+  const id=$('rcv-shp').value;
+  if(!id){$('rcv-tally').style.display='none';$('rcv-empty').style.display='flex';return;}
+  $('rcv-empty').style.display='none';$('rcv-tally').style.display='block';
+  try{
+    const t=await api({action:'shipmentTally',id});
+    if(!t)return;
+    const cats=['Navratri','Diwali','New Year','Everyday Wear'];
+    const idx=cats.indexOf(t.collection);$('rcv-cat').selectedIndex=idx>=0?idx:4;
+    $('rcv-spu').value=t.perUnitShipping;
+    $('rcv-spu-hint').textContent='Auto: '+fmt(t.totalShippingUSD)+'÷'+t.totalUnits;
+    $('rcv-ttl').textContent='➕ Add Item '+t.nextItemId;
+    $('rcv-btn').textContent='➕ Add '+t.nextItemId+' · '+(t.totalUnits-t.itemsTagged)+' left';
+    const cPct=t.totalProductUSD>0?Math.min(100,Math.round(t.costTotal/t.totalProductUSD*100)):0;
+    const sPct=t.totalShippingUSD>0?Math.min(100,Math.round(t.shipTotal/t.totalShippingUSD*100)):0;
+    const iPct=t.totalUnits>0?Math.min(100,Math.round(t.itemsTagged/t.totalUnits*100)):0;
+    $('rcv-tally-box').innerHTML=
+      '<div class="t-ttl">'+t.shipmentId+' · '+t.collection+' · '+t.totalUnits+' units</div>'+
+      '<div class="trow"><span style="color:var(--md)">Items Tagged</span><span class="tv" style="color:var(--bl)">'+t.itemsTagged+' / '+t.totalUnits+'</span></div>'+
+      '<div class="prog"><div class="pfill b" style="width:'+iPct+'%"></div></div>'+
+      '<div class="trow"><span style="color:var(--md)">Cost Allocated</span><span class="tv">'+fmt(t.costTotal)+' / '+fmt(t.totalProductUSD)+'</span></div>'+
+      '<div class="prog"><div class="pfill o" style="width:'+cPct+'%"></div></div>'+
+      '<div class="trow"><span style="color:var(--md)">Shipping Allocated</span><span class="tv" style="color:var(--gn)">'+fmt(t.shipTotal)+' / '+fmt(t.totalShippingUSD)+'</span></div>'+
+      '<div class="prog"><div class="pfill g" style="width:'+sPct+'%"></div></div>'+
+      '<div style="margin-top:6px;font-size:12px;color:var(--md)">Next ID: <strong style="color:var(--o)">'+t.nextItemId+'</strong></div>';
+  }catch(e){toast('Error loading shipment','err');}
+}
+function calcRcv(){
+  const cost=parseFloat($('rcv-cost').value)||0,ship=parseFloat($('rcv-spu').value)||0;
+  const total=cost+ship,sugg=total*2,prv=$('rcv-prv');
+  if(cost>0){$('rcp-cost').textContent=fmt(total);$('rcp-retail').textContent=fmt(sugg);prv.style.display='block';if(!$('rcv-retail').value)$('rcv-retail').value=sugg.toFixed(2);}
+  else{prv.style.display='none';}
+}
+async function submitRcv(){
+  if(!$('rcv-shp').value)return toast('Select a shipment first','err');
+  if(!$('rcv-cost').value)return toast('Enter item cost','err');
+  if(!$('rcv-retail').value)return toast('Enter retail price','err');
+  const cv=$('rcv-cat').value;
+  const cat=cv==='__other__'?$('rcv-cat-custom').value.trim():cv;
+  if(!cat)return toast('Enter a category','err');
+  toast('Adding item...');
+  try{
+    const r=await post({action:'receiveItem',shipmentId:$('rcv-shp').value,category:cat,sku:$('rcv-sku').value,costUSD:$('rcv-cost').value,shippingPerUnit:$('rcv-spu').value,retailPrice:$('rcv-retail').value});
+    if(r.ok){toast('✅ '+r.itemId+' added!','ok');$('rcv-cost').value='';$('rcv-retail').value='';$('rcv-sku').value='';$('rcv-prv').style.display='none';onShpSelect();}
+    else toast('Error: '+r.error,'err');
+  }catch(e){toast('Error adding item','err');}
+}
+
+// ─── Sale ─────────────────────────────────────────────────────────
+async function loadSaleForm(){
+  curItemId='';curItemCost=0;$('sale-found').style.display='none';
+  try{
+    const items=await api({action:'availableItems'});
+    const sel=$('sale-pick');sel.innerHTML='<option value="">— Choose an item —</option>';
+    items.forEach(i=>{
+      const o=document.createElement('option');o.value=i.itemId;
+      o.textContent=i.itemId+' — '+i.category+' ('+fmt(i.retail)+')';
+      o.dataset.cost=i.cost;o.dataset.retail=i.retail;o.dataset.cat=i.category;
+      sel.appendChild(o);
+    });
+  }catch(e){}
+}
+function onSalePay(){$('sale-other-grp').style.display=$('sale-pay').value==='__other__'?'block':'none';}
+function searchItem(){
+  const id=$('sale-search').value.trim().toUpperCase();if(!id)return;
+  const opts=$('sale-pick').options;
+  for(let o of opts){if(o.value===id){$('sale-pick').value=id;onPick();return;}}
+  toast('Item '+id+' not found or not available','err');
+}
+function onPick(){
+  const sel=$('sale-pick'),opt=sel.options[sel.selectedIndex];
+  if(!sel.value){$('sale-found').style.display='none';return;}
+  curItemId=sel.value;curItemCost=parseFloat(opt.dataset.cost)||0;
+  $('sf-name').textContent=opt.dataset.cat||sel.value;
+  $('sf-tag').textContent=sel.value+' · ✅ Available';
+  $('sf-cost').textContent=fmt(opt.dataset.cost);
+  $('sf-retail').textContent=fmt(opt.dataset.retail);
+  $('sale-price').value=parseFloat(opt.dataset.retail).toFixed(2);
+  calcSaleMargin();$('sale-found').style.display='block';$('sale-search').value=sel.value;
+}
+function calcSaleMargin(){
+  const price=parseFloat($('sale-price').value)||0;
+  if(price>0&&curItemCost>0){
+    const m=((price-curItemCost)/price*100).toFixed(1);
+    $('sale-margin').textContent='Profit: '+fmt(price-curItemCost)+' · Margin: '+m+'%';
+  } else $('sale-margin').textContent='';
+}
+async function submitSale(){
+  if(!curItemId)return toast('Select an item to sell','err');
+  if(!$('sale-price').value)return toast('Enter a sale price','err');
+  let pay=$('sale-pay').value;
+  if(pay==='__other__')pay=$('sale-other').value.trim()||'Other';
+  toast('Recording sale...');
+  try{
+    const r=await post({action:'logSale',itemId:curItemId,salePrice:$('sale-price').value,customerName:$('sale-name').value,customerPhone:$('sale-phone').value,paymentMethod:pay});
+    if(r.ok){
+      toast('✅ Sale '+r.saleId+' recorded!','ok');
+      curItemId='';curItemCost=0;
+      $('sale-pick').value='';$('sale-search').value='';$('sale-price').value='';
+      $('sale-name').value='';$('sale-phone').value='';
+      $('sale-found').style.display='none';$('sale-margin').textContent='';
+      loadSaleForm();
+    } else toast('Error: '+r.error,'err');
+  }catch(e){toast('Error recording sale','err');}
+}
+
+// ─── Pending ──────────────────────────────────────────────────────
+async function loadPending(){
+  try{
+    const pending=await api({action:'pending'});
+    const list=$('pend-list'),empty=$('pend-empty'),sum=$('pend-summary');
+    list.innerHTML='';
+    if(!pending.length){empty.style.display='flex';sum.style.display='none';return;}
+    empty.style.display='none';
+    const total=pending.reduce((s,p)=>s+p.salePrice,0);
+    sum.style.display='flex';
+    sum.textContent='⚠️ '+pending.length+' unpaid item'+(pending.length>1?'s':'')+' · Total '+fmt(total);
+    pending.forEach(p=>{
+      const el=document.createElement('div');el.className='pc';
+      el.innerHTML=
+        '<div class="pc-id">'+p.itemId+' · <span style="color:var(--gy);font-weight:500">'+p.category+'</span></div>'+
+        '<div class="pc-name">'+p.customerName+(p.customerPhone?' · 📞 '+p.customerPhone:'')+'</div>'+
+        '<div class="pc-amt">'+fmt(p.salePrice)+'</div>'+
+        '<div class="pc-foot">'+
+          '<span class="badge r">'+(p.daysAgo===0?'Today':p.daysAgo+' day'+(p.daysAgo===1?'':'s')+' ago')+'</span>'+
+          '<button class="btn g sm" style="width:auto;padding:10px 18px" onclick="openPaid(\''+p.saleId+'\','+p.salePrice+',\''+p.customerName+'\',\''+p.itemId+'\')">✅ Mark Paid</button>'+
+        '</div>';
+      list.appendChild(el);
+    });
+  }catch(e){toast('Error loading pending','err');}
+}
+function openPaid(saleId,amt,name,itemId){
+  modalSaleId=saleId;selPayMethod='';
+  $('m-ttl').textContent='How did '+name+' pay?';
+  $('m-amt').textContent=fmt(amt);$('m-sub').textContent=itemId;
+  $('m-confirm').textContent='✅ Confirm · '+fmt(amt);
+  $('m-other').value='';
+  document.querySelectorAll('.pb').forEach(b=>b.classList.remove('on'));
+  $('overlay').classList.add('on');
+}
+function selPay(btn,m){document.querySelectorAll('.pb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');selPayMethod=m;$('m-other').value='';}
+async function confirmPaid(){
+  const method=$('m-other').value.trim()||selPayMethod;
+  if(!method)return toast('Select a payment method','err');
+  try{
+    const r=await post({action:'markAsPaid',saleId:modalSaleId,paymentMethod:method});
+    if(r.ok){toast('✅ Payment recorded as '+method,'ok');closeModal();loadPending();}
+    else toast('Error: '+r.error,'err');
+  }catch(e){toast('Error recording payment','err');}
+}
+function closeOverlay(e){if(e.target.id==='overlay')closeModal();}
+function closeModal(){$('overlay').classList.remove('on');}
+async function sendReminder(){
+  toast('Sending reminder emails...');
+  try{
+    const r=await post({action:'sendReminder'});
+    if(r.ok)toast('📧 Reminder sent! ('+r.count+' items, '+fmt(r.total)+')','ok');
+    else toast(r.msg||'Sent','');
+  }catch(e){toast('Error sending email','err');}
+}
+
+// ─── Inventory ────────────────────────────────────────────────────
+let invFilter='all';
+async function loadInv(){
+  $('inv-list').innerHTML='<div class="loading">Loading inventory...</div>';
+  try{invData=await api({action:'inventory'});renderInv();}
+  catch(e){toast('Error loading inventory','err');}
+}
+function filterInv(f,el){
+  invFilter=f;
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');renderInv();
+}
+function renderInv(){
+  const list=$('inv-list'),empty=$('inv-empty');
+  const filtered=invData.filter(i=>invFilter==='30'?i.days>=30:invFilter==='60'?i.days>=60:true);
+  list.innerHTML='';
+  if(!filtered.length){empty.style.display='block';return;}
+  empty.style.display='none';
+  filtered.forEach(i=>{
+    const el=document.createElement('div');el.className='ii';
+    const priceHtml=i.level==='critical'?
+      '<span class="xout">'+fmt(i.retail)+'</span> → <strong>'+fmt(i.mdPrice)+'</strong>':
+      '<span>Retail: '+fmt(i.retail)+'</span>';
+    el.innerHTML=
+      '<div class="ii-top">'+
+        '<div><div class="ii-id">'+i.itemId+'</div><div class="ii-cat">'+i.category+(i.sku?' · '+i.sku:'')+'</div></div>'+
+        '<div class="age-b '+i.level+'">'+i.days+'d</div>'+
+      '</div>'+
+      '<div class="ii-prices">'+priceHtml+'<span style="color:var(--gy)">Cost: '+fmt(i.cost)+'</span></div>'+
+      '<div class="sug '+i.level+'">'+i.suggest+'</div>';
+    list.appendChild(el);
+  });
+}
+
+// ─── Reports ──────────────────────────────────────────────────────
+async function loadReports(){
+  $('rp-shp').innerHTML='<div class="loading">Loading...</div>';
+  try{
+    const r=await api({action:'reports'});
+    const s=r.summary;
+    $('rp-inv').textContent=fmt(s.invested);$('rp-rev').textContent=fmt(s.revenue);
+    $('rp-profit').textContent=fmt(s.profit);$('rp-margin').textContent=s.margin+'%';
+    $('rp-coh').textContent=fmt(s.costOH);$('rp-roh').textContent=fmt(s.retailOH);
+    const h=r.health,tot=h.total||1;
+    const fp=Math.round(h.fresh/tot*100),ap=Math.round(h.aging30/tot*100),cp=Math.round(h.aging60/tot*100);
+    $('rp-health').innerHTML=
+      '<div style="display:flex;flex-direction:column;gap:10px">'+
+      mkHealth('✅ Fresh (under 30d)',h.fresh,fp,'var(--gn)')+
+      mkHealth('⚠️ Aging (30–60d)',h.aging30,ap,'#F97316')+
+      mkHealth('🔴 Old (60+d)',h.aging60,cp,'var(--rd)')+
+      '</div>';
+    const cont=$('rp-shp');
+    if(!r.byShipment.length){cont.innerHTML='<div class="loading">No shipments yet.</div>';return;}
+    cont.innerHTML='';
+    r.byShipment.forEach(shp=>{
+      const pct=shp.sellThru;
+      const bc=pct>=80?'var(--gn)':pct>=40?'var(--o)':'var(--bl)';
+      let status='';
+      if(shp.available>0&&shp.oldestDays>=60)status='<div style="font-size:11px;color:var(--rd);font-weight:600;margin-top:4px">🔴 Oldest item '+shp.oldestDays+' days · Mark down!</div>';
+      else if(shp.available>0&&shp.oldestDays>=30)status='<div style="font-size:11px;color:#C2410C;font-weight:600;margin-top:4px">⚠️ '+shp.available+' items unsold · oldest '+shp.oldestDays+' days</div>';
+      const el=document.createElement('div');el.className='sr';
+      el.innerHTML=
+        '<div class="sr-top"><div><div class="sr-id">'+shp.id+'</div><div class="sr-sub">'+shp.supplier+' · '+shp.date+'</div></div><div class="coll-tag">'+shp.collection+'</div></div>'+
+        '<div class="s3">'+
+          '<div class="sc"><div class="sv2">'+shp.received+'</div><div class="sk">Received</div></div>'+
+          '<div class="sc"><div class="sv2" style="color:var(--gn)">'+shp.sold+'</div><div class="sk">Sold</div></div>'+
+          '<div class="sc"><div class="sv2" style="color:'+(shp.available>0?'var(--o)':'var(--gy)')+'">'+shp.available+'</div><div class="sk">Left</div></div>'+
+        '</div>'+
+        '<div class="mrow" style="font-size:12px;padding:6px 0 4px;border:none"><span class="mk">Revenue · Cost · Profit</span><span class="mv gn" style="font-size:11px">'+fmt(shp.revenue)+' · '+fmt(shp.cogs)+' · '+fmt(shp.profit)+'</span></div>'+
+        '<div class="mp"><div class="mf" style="width:'+pct+'%;background:'+bc+'"></div></div>'+
+        status;
+      cont.appendChild(el);
+    });
+  }catch(e){toast('Error loading reports','err');}
+}
+function mkHealth(label,count,pct,color){
+  return '<div><div class="mrow" style="border:none;padding:0 0 4px"><span class="mk">'+label+'</span><span class="mv" style="color:'+color+'">'+count+' · '+pct+'%</span></div><div class="mp"><div class="mf" style="width:'+pct+'%;background:'+color+'"></div></div></div>';
+}
+
+// ─── Init ─────────────────────────────────────────────────────────
+window.onload=()=>{loadDash();};
+</script>
+</body>
+</html>
