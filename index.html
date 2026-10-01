@@ -23,8 +23,8 @@
   --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
   --sh2:0 4px 16px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.08);
   --r:14px;--r2:10px;
-  --nav:64px;
-  --hdr:60px;
+  --nav:70px;
+  --hdr:64px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{height:100%;background:var(--bg)}
@@ -32,7 +32,7 @@ body{
   font-family:'Inter',system-ui,-apple-system,sans-serif;
   background:var(--bg);color:var(--dk);
   height:100%;min-height:100vh;
-  font-size:14px;line-height:1.5;
+  font-size:16px;line-height:1.5;
   -webkit-font-smoothing:antialiased;
   -webkit-text-size-adjust:100%;
   overscroll-behavior:none;
@@ -59,10 +59,10 @@ body{
   padding:0 16px;
 }
 #hdr h1{
-  font-size:20px;font-weight:900;color:#fff;
+  font-size:22px;font-weight:900;color:#fff;
   letter-spacing:-0.025em;line-height:1;
 }
-#hdr-sub{font-size:11px;color:rgba(255,255,255,.75);font-weight:500;margin-top:2px}
+#hdr-sub{font-size:13px;color:rgba(255,255,255,.75);font-weight:500;margin-top:2px}
 #pending-pill{
   background:rgba(255,255,255,.2);
   border:1.5px solid rgba(255,255,255,.4);
@@ -83,26 +83,28 @@ body{
 
 /* ── BOTTOM NAV ──────────────────────────────────────────────── */
 #nav{
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:480px;
+  position:fixed;bottom:0;left:0;right:0;
   background:var(--wh);
   border-top:1px solid var(--br);
   display:flex;
   padding-bottom:env(safe-area-inset-bottom,0px);
-  z-index:50;
+  z-index:100;
   box-shadow:0 -2px 12px rgba(0,0,0,.06);
+  touch-action:manipulation;
 }
 .ni{
   flex:1;display:flex;flex-direction:column;align-items:center;
   justify-content:center;padding:8px 2px 6px;
-  font-size:9.5px;font-weight:700;color:var(--gl);
+  font-size:10px;font-weight:700;color:var(--gl);
   gap:3px;cursor:pointer;min-height:var(--nav);
   letter-spacing:.02em;text-transform:uppercase;
   user-select:none;position:relative;
   transition:color .15s;
+  -webkit-tap-highlight-color:rgba(232,101,26,.1);
+  touch-action:manipulation;
 }
 .ni.on{color:var(--o)}
-.ni .ico{font-size:21px;line-height:1;transition:transform .15s}
+.ni .ico{font-size:22px;line-height:1;transition:transform .15s}
 .ni.on .ico{transform:scale(1.12)}
 .ndot{
   position:absolute;top:6px;right:calc(50% - 12px);
@@ -135,17 +137,17 @@ body{
   border:1px solid var(--br);
 }
 .sval{
-  font-size:28px;font-weight:900;color:var(--o);
+  font-size:32px;font-weight:900;color:var(--o);
   letter-spacing:-0.03em;line-height:1;
   font-variant-numeric:tabular-nums;
 }
-.sval.gn{color:var(--gn)}.sval.sm{font-size:20px}
-.slbl{font-size:10px;color:var(--gy);font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+.sval.gn{color:var(--gn)}.sval.sm{font-size:22px}
+.slbl{font-size:11px;color:var(--gy);font-weight:600;margin-top:5px;text-transform:uppercase;letter-spacing:.04em}
 
 /* ── METRIC ROW ──────────────────────────────────────────────── */
 .mrow{
   display:flex;justify-content:space-between;align-items:center;
-  padding:8px 0;border-bottom:1px solid var(--br);font-size:13px;
+  padding:10px 0;border-bottom:1px solid var(--br);font-size:15px;
 }
 .mrow:last-child{border-bottom:none}
 .mk{color:var(--gy)}.mv{font-weight:700;font-variant-numeric:tabular-nums}
@@ -173,7 +175,7 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
 
 /* ── BUTTONS ─────────────────────────────────────────────────── */
 .btn{
-  border-radius:12px;border:none;padding:15px;font-size:15px;font-weight:700;
+  border-radius:12px;border:none;padding:16px;font-size:16px;font-weight:700;
   font-family:'Inter',system-ui,sans-serif;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:7px;
   width:100%;transition:opacity .15s,transform .1s;min-height:52px;
@@ -611,7 +613,7 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
 
 <script>
 // ─── CONFIG — PASTE YOUR GAS WEB APP URL HERE ────────────────────
-const API_URL = 'const API_URL = 'https://script.google.com/macros/s/AKfycbyvjHcugro2tBPfbLHqhFmjvcs8RDcA9wRatKQqGrWsBAJrOGudeo9JzrtV6NtxblC9mA/exec';
+const API_URL = 'PASTE_YOUR_API_URL_HERE';
 // ─────────────────────────────────────────────────────────────────
 
 // ─── State ────────────────────────────────────────────────────────
