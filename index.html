@@ -524,13 +524,9 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
           <input class="inp" id="sale-price" type="number" step="0.01" placeholder="Enter amount" oninput="calcSaleMargin()">
           <div class="hint" id="sale-margin"></div>
         </div>
-        <div class="row2">
-          <div class="fg"><label>Customer Name</label><input class="inp" id="sale-name" type="text" placeholder="Priya Shah"></div>
-          <div class="fg"><label>Phone (Optional)</label><input class="inp" id="sale-phone" type="tel" placeholder="864-555-0192"></div>
-        </div>
         <div class="fg">
           <label>Payment Method</label>
-          <select class="inp" id="sale-pay" onchange="onSalePay()">
+          <select class="inp" id="sale-pay" onchange="onSalePay()" style="font-size:16px">
             <option>Cash</option><option>Credit Card</option><option>Zelle</option>
             <option>Venmo</option><option>PayPal</option><option>CashApp</option>
             <option>Pending</option><option value="__other__">Other...</option>
@@ -540,7 +536,13 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
           <label>Specify Method</label>
           <input class="inp" id="sale-other" type="text" placeholder="e.g. Bank Transfer">
         </div>
-        <button class="btn g" onclick="submitSale()" style="position:sticky;bottom:calc(var(--nav) + 8px);z-index:10;box-shadow:0 4px 20px rgba(22,163,74,.4)">✅ Complete Sale</button>
+        <div class="row2">
+          <div class="fg"><label>Customer Name</label><input class="inp" id="sale-name" type="text" placeholder="Priya Shah"></div>
+          <div class="fg"><label>Phone (Optional)</label><input class="inp" id="sale-phone" type="tel" placeholder="864-555-0192"></div>
+        </div>
+        <div style="padding-bottom:90px">
+          <button class="btn g" onclick="submitSale()" style="position:sticky;bottom:calc(var(--nav) + 8px);z-index:10;box-shadow:0 4px 20px rgba(22,163,74,.4)">✅ Complete Sale</button>
+        </div>
       </div>
     </div>
 
