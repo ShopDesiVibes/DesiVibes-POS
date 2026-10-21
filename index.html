@@ -580,6 +580,7 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
         <div class="tab" onclick="filterInv('30',this)">⚠️ 30+ days</div>
         <div class="tab" onclick="filterInv('60',this)">🔴 60+ days</div>
       </div>
+      <button class="btn" onclick="openAudit()" style="background:linear-gradient(135deg,#7C3AED,#A855F7);margin-bottom:4px;font-size:15px">🔍 Start Physical Audit</button>
       <div id="inv-list"></div>
       <div id="inv-empty" class="loading" style="display:none">No items in this filter.</div>
     </div>
@@ -614,6 +615,48 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
   </div>
 
 </div><!-- /app -->
+
+<!-- AUDIT OVERLAY -->
+<div id="audit-overlay" onclick="closeAuditModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)">
+  <div id="audit-modal" style="background:var(--wh);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:96vh;overflow-y:auto;display:flex;flex-direction:column">
+    <div style="position:sticky;top:0;background:var(--wh);z-index:10;padding:16px 16px 0">
+      <div class="m-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <div style="font-size:18px;font-weight:800;color:#7C3AED">🔍 Physical Audit</div>
+        <button onclick="closeAuditModal()" style="background:var(--oa);border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer">✕</button>
+      </div>
+      <div id="audit-summary" style="display:flex;gap:8px;margin:10px 0;flex-wrap:wrap"></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="tab on" id="aud-tab-all" onclick="auditFilter('all',this)" style="flex:1;font-size:12px">All</button>
+        <button class="tab" id="aud-tab-miss" onclick="auditFilter('missing',this)" style="flex:1;font-size:12px">❓ Not Confirmed</button>
+        <button class="tab" id="aud-tab-ok" onclick="auditFilter('confirmed',this)" style="flex:1;font-size:12px">✅ Confirmed</button>
+      </div>
+    </div>
+    <div id="audit-list" style="padding:0 16px 32px;display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- AUDIT SALE OVERLAY -->
+<div id="audit-sale-overlay" onclick="closeAuditSaleModal(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:none;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--wh);border-radius:20px;padding:20px;width:100%;max-width:400px">
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">💰 Log Sale for <span id="as-itemid" style="color:var(--o)"></span></div>
+    <div id="as-detail" style="font-size:13px;color:var(--md);margin-bottom:14px"></div>
+    <div class="fg"><label>Sale Price ($)</label><input class="inp" id="as-price" type="number" step="0.01" placeholder="$0.00" oninput="calcAuditMargin()"></div>
+    <div id="as-margin" style="font-size:13px;color:var(--md);margin:-8px 0 10px;min-height:18px"></div>
+    <div class="fg">
+      <label>Payment Method</label>
+      <select class="inp" id="as-pay" style="font-size:16px">
+        <option>Cash</option><option>Venmo</option><option>Zelle</option><option>Credit Card</option><option>Pending</option>
+      </select>
+    </div>
+    <div class="fg"><label>Customer Name (Optional)</label><input class="inp" id="as-name" type="text" placeholder="Name..."></div>
+    <div class="fg"><label>Phone (Optional)</label><input class="inp" id="as-phone" type="tel" placeholder="864-..."></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="closeAuditSaleModal()" style="background:var(--md);flex:1">Cancel</button>
+      <button class="btn g" onclick="submitAuditSale()" style="flex:2">✅ Record Sale</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div id="overlay" onclick="closeOverlay(event)">
@@ -1035,6 +1078,147 @@ async function submitReturn(){
       loadSaleForm(); // refresh available items list
     } else toast('Error: '+r.error,'err');
   }catch(e){toast('Error processing return','err');}
+}
+
+// ─── Audit ───────────────────────────────────────────────────────
+let auditItems=[], auditConfirmed={}, auditFilterMode='all', auditSaleItem=null;
+
+async function openAudit(){
+  $('audit-overlay').style.display='flex';
+  $('audit-list').innerHTML='<div class="loading">Loading inventory...</div>';
+  $('audit-summary').innerHTML='';
+  try{
+    const items=await api({action:'availableItems'});
+    auditItems=items;
+    // reset confirmations for fresh audit
+    auditConfirmed={};
+    auditItems.forEach(i=>{auditConfirmed[i.itemId]=false;});
+    auditFilterMode='all';
+    renderAudit();
+  }catch(e){$('audit-list').innerHTML='<div class="alert w">Error loading items</div>';}
+}
+
+function renderAudit(){
+  updateAuditSummary();
+  const list=$('audit-list');
+  const show=auditItems.filter(i=>{
+    if(auditFilterMode==='confirmed') return auditConfirmed[i.itemId];
+    if(auditFilterMode==='missing')   return !auditConfirmed[i.itemId];
+    return true;
+  });
+  if(!show.length){
+    list.innerHTML='<div style="text-align:center;color:var(--md);padding:32px;font-size:14px">'+(auditFilterMode==='missing'?'🎉 All items confirmed! No missing items.':'No items to show.')+'</div>';
+    return;
+  }
+  list.innerHTML=show.map(i=>{
+    const confirmed=auditConfirmed[i.itemId];
+    const bc=confirmed?'#DCFCE7':'#FFF7ED';
+    const bc2=confirmed?'#16A34A':'#EA580C';
+    return `<div style="background:${bc};border-radius:14px;padding:12px;border:2px solid ${confirmed?'#86EFAC':'#FED7AA'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <span style="font-weight:800;font-size:16px;color:${bc2}">${i.itemId}</span>
+          <span style="font-size:13px;color:var(--md);margin-left:6px">${i.category}${i.sku?' · '+i.sku:''}</span>
+        </div>
+        <span style="font-weight:700;color:var(--o)">${fmt(i.retail)}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="toggleConfirm('${i.itemId}')" style="flex:1;padding:8px;border-radius:10px;border:none;background:${confirmed?'#16A34A':'#9CA3AF'};color:#fff;font-weight:700;font-size:13px;cursor:pointer">
+          ${confirmed?'✅ Confirmed':'⬜ Tap to Confirm'}
+        </button>
+        ${!confirmed?`
+        <button onclick="openAuditSale('${i.itemId}')" style="padding:8px 12px;border-radius:10px;border:none;background:#2563EB;color:#fff;font-size:12px;font-weight:700;cursor:pointer">💰 Was Sold</button>
+        <button onclick="writeOffAudit('${i.itemId}')" style="padding:8px 12px;border-radius:10px;border:none;background:#DC2626;color:#fff;font-size:12px;font-weight:700;cursor:pointer">📦 Write Off</button>
+        `:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleConfirm(itemId){
+  auditConfirmed[itemId]=!auditConfirmed[itemId];
+  renderAudit();
+}
+
+function updateAuditSummary(){
+  const total=auditItems.length;
+  const confirmed=Object.values(auditConfirmed).filter(Boolean).length;
+  const missing=total-confirmed;
+  $('audit-summary').innerHTML=
+    `<div style="background:#DCFCE7;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;color:#16A34A">✅ ${confirmed} Confirmed</div>`+
+    `<div style="background:${missing>0?'#FEF3C7':'#F3F4F6'};border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;color:${missing>0?'#D97706':'#9CA3AF'}">❓ ${missing} Not Checked</div>`+
+    `<div style="background:#F3F4F6;border-radius:10px;padding:6px 12px;font-size:13px;color:var(--md)">${total} Total</div>`;
+}
+
+function auditFilter(mode,el){
+  auditFilterMode=mode;
+  document.querySelectorAll('#audit-modal .tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  renderAudit();
+}
+
+function closeAuditModal(e){
+  if(!e||e.target.id==='audit-overlay')$('audit-overlay').style.display='none';
+}
+
+// ── Audit: Mark as Sold ──
+function openAuditSale(itemId){
+  const item=auditItems.find(i=>i.itemId===itemId);
+  if(!item)return;
+  auditSaleItem=item;
+  $('as-itemid').textContent=itemId;
+  $('as-detail').textContent=item.category+(item.sku?' · '+item.sku:'')+' · Cost: '+fmt(item.cost)+' · Listed at: '+fmt(item.retail);
+  $('as-price').value=item.retail?item.retail.toFixed(2):'';
+  $('as-name').value='';$('as-phone').value='';
+  calcAuditMargin();
+  $('audit-sale-overlay').style.display='flex';
+}
+
+function calcAuditMargin(){
+  if(!auditSaleItem)return;
+  const price=parseFloat($('as-price').value)||0;
+  const cost=auditSaleItem.cost||0;
+  if(price>0&&cost>0){
+    const m=((price-cost)/price*100).toFixed(1);
+    $('as-margin').textContent='Profit: '+fmt(price-cost)+' · Margin: '+m+'%';
+  } else $('as-margin').textContent='';
+}
+
+async function submitAuditSale(){
+  if(!auditSaleItem)return;
+  if(!$('as-price').value)return toast('Enter a sale price','err');
+  toast('Recording sale...');
+  try{
+    const r=await post({action:'logSale',itemId:auditSaleItem.itemId,salePrice:$('as-price').value,customerName:$('as-name').value,customerPhone:$('as-phone').value,paymentMethod:$('as-pay').value});
+    if(r.ok){
+      toast('✅ '+r.saleId+' recorded!','ok');
+      closeAuditSaleModal();
+      // Remove from audit list — it's no longer Available
+      auditItems=auditItems.filter(i=>i.itemId!==auditSaleItem.itemId);
+      delete auditConfirmed[auditSaleItem.itemId];
+      auditSaleItem=null;
+      renderAudit();
+    } else toast('Error: '+r.error,'err');
+  }catch(e){toast('Error recording sale','err');}
+}
+
+function closeAuditSaleModal(e){
+  if(!e||e.target.id==='audit-sale-overlay')$('audit-sale-overlay').style.display='none';
+}
+
+// ── Audit: Write Off (Lost/Theft/Unknown) ──
+async function writeOffAudit(itemId){
+  if(!confirm('Mark '+itemId+' as LOST / Written Off?\n\nThis removes it from inventory. It will NOT count as a sale or affect revenue.'))return;
+  toast('Writing off '+itemId+'...');
+  try{
+    const r=await post({action:'writeOffItem',itemId});
+    if(r.ok){
+      toast('📦 '+itemId+' written off','ok');
+      auditItems=auditItems.filter(i=>i.itemId!==itemId);
+      delete auditConfirmed[itemId];
+      renderAudit();
+    } else toast('Error: '+r.error,'err');
+  }catch(e){toast('Error writing off item','err');}
 }
 
 // ─── Pending ──────────────────────────────────────────────────────
