@@ -408,15 +408,20 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
           <div class="fg"><label>Shipping Cost (INR)</label><input class="inp" id="shp-sinr" type="number" placeholder="₹12600" oninput="calcShp()"></div>
         </div>
         <div class="fg">
+          <label>GST (INR) <span style="font-weight:400;color:var(--md)">— leave 0 if none</span></label>
+          <input class="inp" id="shp-gst" type="number" placeholder="₹0" oninput="calcShp()">
+        </div>
+        <div class="fg">
           <label>Total I Paid (USD)</label>
           <input class="inp" id="shp-usd" type="number" step="0.01" placeholder="$650.00" oninput="calcShp()">
-          <div class="hint">All-in: Xoom / bank fees included</div>
+          <div class="hint">Product + Shipping only (not GST — GST is calculated from the rate)</div>
         </div>
         <div class="prv" id="shp-prv" style="display:none">
           <div class="prow"><span style="color:var(--md)">Rate</span><span id="pr-rate" style="font-weight:700"></span></div>
           <div class="prow"><span style="color:var(--md)">Product (USD)</span><span id="pr-prod"></span></div>
           <div class="prow"><span style="color:var(--md)">Shipping (USD)</span><span id="pr-ship"></span></div>
-          <div class="prow tot"><span>Total Paid</span><span id="pr-tot"></span></div>
+          <div class="prow" id="pr-gst-row" style="display:none"><span style="color:var(--md)">GST (USD)</span><span id="pr-gst"></span></div>
+          <div class="prow tot"><span>Total Cost</span><span id="pr-tot"></span></div>
         </div>
         <div class="fg" style="margin-top:12px">
           <label>Payment Method</label>
@@ -785,14 +790,19 @@ function onColl(selId,inputId){
 }
 function calcShp(){
   const pINR=parseFloat($('shp-pinr').value)||0,sINR=parseFloat($('shp-sinr').value)||0;
+  const gINR=parseFloat($('shp-gst').value)||0;
   const tINR=pINR+sINR,tUSD=parseFloat($('shp-usd').value)||0,box=$('shp-prv');
   if(tUSD>0&&tINR>0){
     const rate=tINR/tUSD,pUSD=tUSD*(pINR/tINR),shUSD=tUSD-pUSD;
+    const gUSD=gINR>0?Math.round(gINR/rate*100)/100:0;
     $('pr-rate').textContent='1 USD = '+rate.toFixed(1)+' INR';
-    $('pr-prod').textContent=fmt(pUSD);$('pr-ship').textContent=fmt(shUSD);$('pr-tot').textContent=fmt(tUSD);
+    $('pr-prod').textContent=fmt(pUSD);$('pr-ship').textContent=fmt(shUSD);
+    if(gINR>0){$('pr-gst').textContent=fmt(gUSD);$('pr-gst-row').style.display='flex';}
+    else{$('pr-gst-row').style.display='none';}
+    $('pr-tot').textContent=fmt(tUSD+(gUSD));
     box.style.display='block';
   } else if(tUSD>0){
-    $('pr-rate').textContent='Enter INR to see rate';$('pr-prod').textContent='—';$('pr-ship').textContent='—';$('pr-tot').textContent=fmt(tUSD);box.style.display='block';
+    $('pr-rate').textContent='Enter INR to see rate';$('pr-prod').textContent='—';$('pr-ship').textContent='—';$('pr-gst-row').style.display='none';$('pr-tot').textContent=fmt(tUSD);box.style.display='block';
   } else {box.style.display='none';}
 }
 async function submitShp(){
@@ -805,8 +815,8 @@ async function submitShp(){
   if(!$('shp-usd').value)return toast('Enter total USD paid','err');
   toast('Saving shipment...');
   try{
-    const r=await post({action:'logShipment',supplier:sup,collection:coll,date:$('shp-date').value,totalUnits:$('shp-units').value,productINR:$('shp-pinr').value,shippingINR:$('shp-sinr').value,totalUSD:$('shp-usd').value,paymentMethod:$('shp-pay').value,notes:$('shp-notes').value});
-    if(r.ok){toast('✅ Shipment '+r.id+' logged!','ok');$('shp-pinr').value='';$('shp-sinr').value='';$('shp-usd').value='';$('shp-units').value='';$('shp-notes').value='';$('shp-prv').style.display='none';}
+    const r=await post({action:'logShipment',supplier:sup,collection:coll,date:$('shp-date').value,totalUnits:$('shp-units').value,productINR:$('shp-pinr').value,shippingINR:$('shp-sinr').value,gstINR:$('shp-gst').value||'0',totalUSD:$('shp-usd').value,paymentMethod:$('shp-pay').value,notes:$('shp-notes').value});
+    if(r.ok){toast('✅ Shipment '+r.id+' logged!','ok');$('shp-pinr').value='';$('shp-sinr').value='';$('shp-gst').value='';$('shp-usd').value='';$('shp-units').value='';$('shp-notes').value='';$('shp-prv').style.display='none';}
     else toast('Error: '+r.error,'err');
   }catch(e){toast('Error saving shipment','err');}
 }
@@ -830,7 +840,7 @@ async function onShpSelect(){
     const cats=['Navratri','Diwali','New Year','Everyday Wear'];
     const idx=cats.indexOf(t.collection);$('rcv-cat').selectedIndex=idx>=0?idx:4;
     $('rcv-spu').value=t.perUnitShipping;
-    $('rcv-spu-hint').textContent='Auto: '+fmt(t.totalShippingUSD)+'÷'+t.totalUnits;
+    $('rcv-spu-hint').textContent='Auto: '+fmt(t.totalShippingUSD)+'÷'+t.totalUnits+(t.perUnitGST>0?' · GST/unit: '+fmt(t.perUnitGST):' · No GST');
     $('rcv-ttl').textContent='➕ Add Item';
     if(!$('rcv-id').value)$('rcv-id').value=t.nextItemId;
     $('rcv-btn').textContent='➕ Add Item · '+(t.totalUnits-t.itemsTagged)+' left';
@@ -877,7 +887,8 @@ async function submitRcv(){
   if(!cat)return toast('Enter a category','err');
   toast('Adding item...');
   try{
-    const r=await post({action:'receiveItem',itemId:customId,shipmentId:$('rcv-shp').value,category:cat,sku:$('rcv-sku').value,costUSD:$('rcv-cost').value,shippingPerUnit:$('rcv-spu').value,retailPrice:$('rcv-retail').value});
+    const t2=await api({action:'shipmentTally',id:$('rcv-shp').value});
+    const r=await post({action:'receiveItem',itemId:customId,shipmentId:$('rcv-shp').value,category:cat,sku:$('rcv-sku').value,costUSD:$('rcv-cost').value,shippingPerUnit:$('rcv-spu').value,gstPerUnit:(t2&&t2.perUnitGST)||0,retailPrice:$('rcv-retail').value});
     if(r.ok){toast('✅ '+r.itemId+' added!','ok');$('rcv-id').value='';$('rcv-inr').value='';$('rcv-cost').value='';$('rcv-retail').value='';$('rcv-sku').value='';$('rcv-prv').style.display='none';onShpSelect();}
     else toast('Error: '+r.error,'err');
   }catch(e){toast('Error adding item','err');}
@@ -1082,10 +1093,11 @@ async function openShipmentDetail(shpId){
     const roi=d.totalPaid>0?((d.revenue-d.cogs)/d.totalPaid*100).toFixed(1):0;
     const retailLeft=d.items.filter(i=>i.status==='Available').reduce((s,i)=>s+(i.retail||0),0);
     $('sm-finance').innerHTML=
-      '<div class="prow"><span style="color:var(--md)">Total Paid</span><span style="font-weight:700">'+fmt(d.totalPaid)+'</span></div>'+
       '<div class="prow"><span style="color:var(--md)">Product Cost</span><span style="font-weight:700">'+fmt(d.productUSD)+'</span></div>'+
       '<div class="prow"><span style="color:var(--md)">Shipping Cost</span><span style="font-weight:700">'+fmt(d.shippingUSD)+'</span></div>'+
-      '<div class="prow"><span style="color:var(--md)">Per-Unit Shipping</span><span style="font-weight:700">'+fmt(d.perUnitShipping)+'</span></div>'+
+      (d.gstINR>0?'<div class="prow"><span style="color:var(--md)">GST (₹'+d.gstINR+')</span><span style="font-weight:700;color:#A855F7">'+fmt(d.gstUSD)+'</span></div>':'<div class="prow"><span style="color:var(--md)">GST</span><span style="color:var(--md)">None</span></div>')+
+      '<div class="prow tot"><span>Total Paid</span><span>'+fmt(d.totalPaid+(d.gstUSD||0))+'</span></div>'+
+      '<div class="prow"><span style="color:var(--md)">Per-Unit Shipping+GST</span><span style="font-weight:700">'+fmt(d.perUnitShipping+(d.perUnitGST||0))+'</span></div>'+
       '<div class="prow" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--oa)"><span style="color:var(--md)">Revenue (sold)</span><span style="font-weight:800;color:var(--gn)">'+fmt(d.revenue)+'</span></div>'+
       '<div class="prow"><span style="color:var(--md)">COGS (sold)</span><span style="font-weight:700">'+fmt(d.cogs)+'</span></div>'+
       '<div class="prow tot"><span>Gross Profit</span><span>'+fmt(d.profit)+'</span></div>'+
