@@ -550,6 +550,19 @@ hr.div{border:none;border-top:1px solid var(--br);margin:14px 0}
           <button class="btn g" onclick="submitSale()" style="position:sticky;bottom:calc(var(--nav) + 8px);z-index:10;box-shadow:0 4px 20px rgba(22,163,74,.4)">✅ Complete Sale</button>
         </div>
       </div>
+
+      <!-- Return Section -->
+      <div class="card" style="margin-top:8px;border:2px solid #FED7AA">
+        <div class="card-ttl" style="color:#C2410C">↩️ Process a Return</div>
+        <div style="font-size:13px;color:var(--md);margin-bottom:12px">Item goes back to Available. Sale is voided — <strong>not counted in revenue or profit.</strong></div>
+        <div class="fg">
+          <label>Item ID to Return</label>
+          <input class="inp" id="ret-id" type="text" placeholder="2001" style="text-transform:uppercase;font-weight:700;font-size:18px;letter-spacing:.05em" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div id="ret-confirm" style="display:none;background:#FEF3C7;border-radius:12px;padding:12px;margin-bottom:8px;font-size:14px"></div>
+        <button class="btn" onclick="lookupReturn()" style="background:#F97316;margin-bottom:8px">🔍 Look Up Item</button>
+        <button class="btn" id="ret-btn" onclick="submitReturn()" style="display:none;background:#DC2626">↩️ Confirm Return</button>
+      </div>
     </div>
 
     <!-- ⑤ PENDING -->
@@ -983,6 +996,45 @@ async function submitSale(){
       loadSaleForm();
     } else toast('Error: '+r.error,'err');
   }catch(e){toast('Error recording sale','err');}
+}
+
+// ─── Returns ─────────────────────────────────────────────────────
+let retItemData=null;
+async function lookupReturn(){
+  const id=$('ret-id').value.trim().toUpperCase();
+  if(!id)return toast('Enter an Item ID','err');
+  $('ret-confirm').style.display='none';$('ret-btn').style.display='none';
+  toast('Looking up item...');
+  try{
+    const d=await api({action:'itemDetail',id});
+    if(!d||!d.itemId)return toast('Item '+id+' not found','err');
+    retItemData=d;
+    const box=$('ret-confirm');
+    if(d.status==='Available'){
+      box.innerHTML='<strong style="color:#16A34A">'+d.itemId+'</strong> is already <strong>Available</strong> — it was never sold or was already returned.';
+      box.style.display='block';$('ret-btn').style.display='none';
+    } else {
+      box.innerHTML=
+        '<div style="font-weight:700;font-size:15px;margin-bottom:6px">'+d.itemId+' · '+d.category+(d.sku?' · '+d.sku:'')+'</div>'+
+        '<div style="color:#C2410C">Status: <strong>'+d.status+'</strong></div>'+
+        '<div style="margin-top:6px;font-size:13px;color:#6B7280">Cost basis: '+fmt(d.totalCost)+' · This sale will be <strong>voided from all revenue reports</strong></div>';
+      box.style.display='block';$('ret-btn').style.display='block';
+    }
+    toast('');
+  }catch(e){toast('Error looking up item','err');}
+}
+async function submitReturn(){
+  if(!retItemData)return toast('Look up an item first','err');
+  toast('Processing return...');
+  try{
+    const r=await post({action:'returnItem',itemId:retItemData.itemId});
+    if(r.ok){
+      toast('↩️ '+r.itemId+' returned — back in inventory','ok');
+      $('ret-id').value='';$('ret-confirm').style.display='none';$('ret-btn').style.display='none';
+      retItemData=null;
+      loadSaleForm(); // refresh available items list
+    } else toast('Error: '+r.error,'err');
+  }catch(e){toast('Error processing return','err');}
 }
 
 // ─── Pending ──────────────────────────────────────────────────────
