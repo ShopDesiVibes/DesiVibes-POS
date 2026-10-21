@@ -714,7 +714,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyvjHcugro2tBPfbLHqhFmj
 // ─────────────────────────────────────────────────────────────────
 
 // ─── State ────────────────────────────────────────────────────────
-let cur='dashboard', invData=[], modalSaleId='', selPayMethod='', curItemId='', curItemCost=0, curRate=0, curItemData={};
+let cur='dashboard', invData=[], modalSaleId='', selPayMethod='', curItemId='', curItemCost=0, curRate=0, curGST=0, curItemData={};
 const TITLES={dashboard:'Dashboard',shipment:'Log Shipment',receive:'Receive Items',sale:'Log Sale',pending:'Pending Payments',inventory:'Inventory Age',reports:'Reports'};
 const SCREENS=['dashboard','shipment','receive','sale','pending','inventory','reports'];
 
@@ -852,7 +852,7 @@ async function onShpSelect(){
     $('rcv-ttl').textContent='➕ Add Item';
     if(!$('rcv-id').value)$('rcv-id').value=t.nextItemId;
     $('rcv-btn').textContent='➕ Add Item · '+(t.totalUnits-t.itemsTagged)+' left';
-    curRate=t.rate||0;
+    curRate=t.rate||0; curGST=t.perUnitGST||0;
     const rateHint=$('rcv-rate-hint');
     if(curRate>0){rateHint.textContent='Rate: 1 USD = ₹'+curRate.toFixed(1)+' (from shipment)';rateHint.style.display='block';}
     else{rateHint.style.display='none';}
@@ -880,9 +880,16 @@ function calcInr(){
 }
 function calcRcv(){
   const cost=parseFloat($('rcv-cost').value)||0,ship=parseFloat($('rcv-spu').value)||0;
-  const total=cost+ship,sugg=total*2,prv=$('rcv-prv');
-  if(cost>0){$('rcp-cost').textContent=fmt(total);$('rcp-retail').textContent=fmt(sugg);prv.style.display='block';if(!$('rcv-retail').value)$('rcv-retail').value=sugg.toFixed(2);}
-  else{prv.style.display='none';}
+  const total=Math.round((cost+ship+curGST)*100)/100;
+  const sugg=total*2;
+  const rounded=Math.round(sugg/5)*5;  // nearest $5
+  const prv=$('rcv-prv');
+  if(cost>0){
+    $('rcp-cost').textContent=fmt(total);
+    $('rcp-retail').textContent=fmt(rounded)+' (nearest $5)';
+    prv.style.display='block';
+    if(!$('rcv-retail').value)$('rcv-retail').value=rounded.toFixed(2);
+  } else{prv.style.display='none';}
 }
 async function submitRcv(){
   if(!$('rcv-shp').value)return toast('Select a shipment first','err');
