@@ -983,9 +983,12 @@ async function loadSaleForm(){
 }
 function onSalePay(){$('sale-other-grp').style.display=$('sale-pay').value==='__other__'?'block':'none';}
 function searchItem(){
-  const id=$('sale-search').value.trim().toUpperCase();if(!id)return;
-  const opts=$('sale-pick').options;
-  for(let o of opts){if(o.value===id){$('sale-pick').value=id;onPick();return;}}
+  const id=$('sale-search').value.trim();if(!id)return;
+  const sel=$('sale-pick');
+  if(sel.options.length<=1){toast('Items still loading — try again in a moment','err');return;}
+  const idStr=String(id).trim();
+  const opts=sel.options;
+  for(let o of opts){if(String(o.value).trim()===idStr){sel.value=o.value;onPick();return;}}
   toast('Item '+id+' not found or not available','err');
 }
 function onPick(){
